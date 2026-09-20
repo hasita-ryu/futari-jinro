@@ -399,14 +399,44 @@ function renderResult() {
   const round = game.round;
   const result = round.result;
   render(app, page("結果", `
-    <div class="panel">
+    <div class="panel result-summary">
+      <span class="pill">ラウンド${round.number}</span>
       <h2>${result.summary}</h2>
-      <div class="result-row"><strong>${playerLabel(game.names, "p1")}</strong>${roleCard(round.roles.p1, { showCamp: true })}<p>選択: ${choiceName(round.choices.p1)} → 判定: ${choiceName(round.effectiveChoices.p1)} / +${result.playerDelta.p1}点</p></div>
-      <div class="result-row"><strong>${playerLabel(game.names, "p2")}</strong>${roleCard(round.roles.p2, { showCamp: true })}<p>選択: ${choiceName(round.choices.p2)} → 判定: ${choiceName(round.effectiveChoices.p2)} / +${result.playerDelta.p2}点</p></div>
-      <p><strong>累計</strong> ${game.scores.p1} - ${game.scores.p2}</p>
+      <div class="score-board">
+        <div>
+          <small>${escapeHtml(playerLabel(game.names, "p1"))}</small>
+          <strong>${game.scores.p1}</strong>
+        </div>
+        <span>累計</span>
+        <div>
+          <small>${escapeHtml(playerLabel(game.names, "p2"))}</small>
+          <strong>${game.scores.p2}</strong>
+        </div>
+      </div>
+    </div>
+    <div class="result-list">
+      ${resultPlayerCard(game, round, result, "p1")}
+      ${resultPlayerCard(game, round, result, "p2")}
       ${onlineRoomNav()}
     </div>
   `, `${isOnlineSession() ? (isHost() ? button("次のゲーム", "next-round", "primary") : `<div class="panel"><p class="muted">1Pが次のゲームを開始します。</p></div>`) : button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+}
+
+function resultPlayerCard(game, round, result, playerId) {
+  const delta = result.playerDelta[playerId] || 0;
+  return `
+    <article class="result-row">
+      <div class="result-head">
+        <strong>${escapeHtml(playerLabel(game.names, playerId))}</strong>
+        <span class="score-delta">+${delta}点</span>
+      </div>
+      ${roleCard(round.roles[playerId], { showCamp: true })}
+      <div class="choice-strip">
+        <div><small>選んだ手</small><strong>${choiceName(round.choices[playerId])}</strong></div>
+        <div><small>判定</small><strong>${choiceName(round.effectiveChoices[playerId])}</strong></div>
+      </div>
+    </article>
+  `;
 }
 
 async function createOnlineRoom() {
