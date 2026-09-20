@@ -544,7 +544,8 @@ async function publishOnlineRound(screen) {
 }
 
 function syncOnlineRoom(room) {
-  state.onlineSlot = resolveOnlineSlot(room);
+  const resolvedSlot = resolveOnlineSlot(room);
+  if (!state.onlineSlot && resolvedSlot) state.onlineSlot = resolvedSlot;
   const names = room.player_names || { p1: "プレイヤー1", p2: "プレイヤー2" };
   state.game = {
     mode: "online",

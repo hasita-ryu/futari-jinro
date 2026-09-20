@@ -9,10 +9,12 @@ export function getOrCreatePlayerId() {
 
 export class OnlineGame {
   constructor() {
+    const saved = readSession();
     this.client = null;
     this.roomChannel = null;
     this.presenceChannel = null;
     this.playerId = getOrCreatePlayerId();
+    this.slot = saved?.slot || null;
     this.room = null;
     this.secret = null;
     this.listeners = new Set();
@@ -35,6 +37,7 @@ export class OnlineGame {
     await clearAnonymousSession(this.client);
     this.client = createSupabaseClient();
     this.playerId = "";
+    this.slot = null;
     this.room = null;
     this.secret = null;
     sessionStorage.removeItem(SESSION_KEY);
@@ -117,6 +120,7 @@ export class OnlineGame {
     if (error || !data) return null;
     if (data.host_player_id !== this.playerId && data.guest_player_id !== this.playerId) return null;
     this.room = data;
+    this.slot = saved.slot;
     await this.fetchSecret();
     await this.subscribe(data.code);
     return { room: data, slot: saved.slot };
@@ -156,13 +160,14 @@ export class OnlineGame {
   async fetchSecret() {
     await this.ensureReady();
     if (!this.room) return null;
-    const { data, error } = await this.client
+    const query = this.client
       .from("player_secrets")
       .select("*")
       .eq("room_code", this.room.code)
-      .eq("player_id", this.playerId)
       .eq("round_number", this.room.round_number)
-      .maybeSingle();
+      .order("updated_at", { ascending: false })
+      .limit(1);
+    const { data, error } = await (this.slot ? query.eq("slot", this.slot) : query.eq("player_id", this.playerId)).maybeSingle();
     if (error) throw friendlyError(error, "自分用のカード情報を取得できませんでした。");
     this.secret = data;
     return data;
@@ -207,11 +212,13 @@ export class OnlineGame {
 
   leaveLocalSession() {
     sessionStorage.removeItem(SESSION_KEY);
+    this.slot = null;
     this.room = null;
     this.secret = null;
   }
 
   saveSession(slot, code) {
+    this.slot = slot;
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({ slot, code, playerId: this.playerId }));
   }
 
