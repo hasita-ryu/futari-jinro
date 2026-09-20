@@ -51,7 +51,7 @@ export class OnlineGame {
   }
 
   async createRoom(playerName, selectedRoleIds) {
-    await this.ensureReady();
+    await this.resetClientForFreshPlayer();
     const roomCode = await this.createUniqueCode();
     const now = new Date().toISOString();
     const room = {
