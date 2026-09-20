@@ -106,7 +106,7 @@ function paint() {
 
 async function handleAction(action) {
   const actions = {
-    home: () => goHome(),
+    home: () => resetToHome(),
     howto: () => setScreen("howto"),
     "role-guide": () => setScreen("roleGuide"),
     offline: () => {
@@ -138,14 +138,13 @@ async function handleAction(action) {
     "start-selected-roles": startSelectedRoles,
     "confirm-reveal": confirmReveal,
     "finish-ability": finishAbility,
-    "start-final": () => setScreen("finalChoice"),
+    "start-discussion": startDiscussion,
+    "start-final": startFinalChoice,
     handshake: () => chooseFinal(CHOICES.HANDSHAKE),
     protect: () => chooseFinal(CHOICES.PROTECT),
     "next-round": nextRound,
     "leave-online": async () => {
-      await online.unsubscribe();
-      online.leaveLocalSession();
-      goHome();
+      await resetToHome();
     }
   };
   await actions[action]?.();
@@ -163,6 +162,14 @@ function goHome() {
   state.currentSecret = null;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   setScreen("home");
+}
+
+async function resetToHome() {
+  if (isOnlineSession()) {
+    await online.unsubscribe();
+    online.leaveLocalSession();
+  }
+  goHome();
 }
 
 function renderHome() {
@@ -232,6 +239,7 @@ function renderOnlineCreate() {
   const room = online.room;
   const ready = Boolean(room?.guest_player_id);
   const inGame = isOnlineGameActive(room?.status);
+  const host = isHost();
   render(app, page("ルーム", `
     <div class="panel">
       <p>このコードを相手に伝えてください。</p>
@@ -240,7 +248,8 @@ function renderOnlineCreate() {
       <p><span class="status-dot ${ready ? "on" : ""}"></span>${ready ? "2人そろいました" : "相手を待っています"}</p>
       <p class="muted">接続中: ${state.onlinePresence.length}人</p>
       ${inGame ? `<p class="muted">現在の進行: ${phaseName(room.status)}</p>${button("ゲーム画面へ戻る", "resume-game", "primary")}` : ""}
-      ${!inGame && state.onlineSlot === "p1" && ready ? button("役職を選ぶ", "go-role-select", "primary") : ""}
+      ${!inGame && host && ready ? button("役職を選ぶ", "go-role-select", "primary") : ""}
+      ${!inGame && !host && ready ? `<p class="muted">1Pが役職を選んで開始します。</p>` : ""}
     </div>
   `, button("ホームへ戻る", "leave-online")));
 }
@@ -294,13 +303,19 @@ function renderAbility() {
   const role = getRole(secret?.roleId);
   const log = secret?.abilityLog || round.abilityLog[playerId];
   if (round.abilityDone[playerId] || log?.length) {
-    const otherId = playerId === "p1" ? "p2" : "p1";
-    const onlineWaiting = state.mode === "online" && !round.abilityDone[otherId];
+    const allOnlineDone = state.mode === "online" && round.abilityDone.p1 && round.abilityDone.p2;
+    const abilityDoneAction = state.mode === "online"
+      ? allOnlineDone
+        ? isHost()
+          ? button("話し合いへ進む", "start-discussion", "primary")
+          : `<h2>1Pを待っています</h2><p class="muted">2人とも能力は完了しました。1Pが話し合いへ進めます。</p>`
+        : `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了するまで待ちます。</p>`
+      : button("完了", "finish-ability", "primary");
     render(app, page("能力結果", `
       <div class="panel">
         ${roleCard(secret?.roleId, { showCamp: true })}
         ${revealedPeek(log)}
-        ${onlineWaiting ? `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了すると話し合いへ進みます。</p>` : button("話し合いへ", "finish-ability", "primary")}
+        ${abilityDoneAction}
         ${onlineRoomNav()}
       </div>
     `));
@@ -323,13 +338,15 @@ function renderAbility() {
 function renderDiscussion() {
   const done = state.game.round.abilityDone;
   const onlineIncomplete = isOnlineSession() && (!done.p1 || !done.p2);
+  const canHostAdvance = isHost() && !onlineIncomplete;
   render(app, page("話し合い", `
     <div class="panel">
       <h2>話し合ってください</h2>
       <p>目安は3分です。オンラインでは通話や対面で会話してください。</p>
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
       ${onlineIncomplete ? `<p class="muted">まだ全員の能力が終わっていません。終わっていない人は能力画面に戻ってください。</p>${button("能力画面へ戻る", "ability-screen", "primary")}` : ""}
-      ${done.p1 && done.p2 ? button("最終選択へ", "start-final", "primary") : ""}
+      ${canHostAdvance ? button("最終選択へ進む", "start-final", "primary") : ""}
+      ${isOnlineSession() && !isHost() && !onlineIncomplete ? `<p class="muted">1Pが最終選択へ進めます。</p>` : ""}
       ${onlineRoomNav()}
     </div>
   `));
@@ -363,7 +380,7 @@ function renderResult() {
       <p><strong>累計</strong> ${game.scores.p1} - ${game.scores.p2}</p>
       ${onlineRoomNav()}
     </div>
-  `, `${button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+  `, `${isOnlineSession() ? (isHost() ? button("次のゲーム", "next-round", "primary") : `<div class="panel"><p class="muted">1Pが次のゲームを開始します。</p></div>`) : button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
 }
 
 async function createOnlineRoom() {
@@ -393,6 +410,7 @@ async function copyCode() {
 
 async function startSelectedRoles() {
   if (state.selectedRoleIds.length < 5) throw new Error("役職は5種類以上選んでください。");
+  if (state.mode === "online" && !isHost()) throw new Error("オンラインでは1Pがゲームを開始します。");
   if (state.mode === "offline") {
     const p1 = document.querySelector("#p1Name")?.value?.trim() || state.game?.names?.p1 || "プレイヤー1";
     const p2 = document.querySelector("#p2Name")?.value?.trim() || state.game?.names?.p2 || "プレイヤー2";
@@ -431,9 +449,31 @@ async function finishAbility() {
     }
     return;
   }
-  const nextScreen = state.game.round.abilityDone.p1 && state.game.round.abilityDone.p2 ? "discussion" : "ability";
-  await publishOnlineRound(nextScreen);
-  setScreen(nextScreen);
+  await publishOnlineRound("ability");
+  setScreen("ability");
+}
+
+async function startDiscussion() {
+  if (state.mode !== "online") {
+    setScreen("discussion");
+    return;
+  }
+  if (!isHost()) throw new Error("話し合いへ進めるのは1Pです。");
+  if (!state.game.round.abilityDone.p1 || !state.game.round.abilityDone.p2) {
+    throw new Error("2人とも能力を終えるまで話し合いへ進めません。");
+  }
+  await publishOnlineRound("discussion");
+  setScreen("discussion");
+}
+
+async function startFinalChoice() {
+  if (state.mode !== "online") {
+    setScreen("finalChoice");
+    return;
+  }
+  if (!isHost()) throw new Error("最終選択へ進めるのは1Pです。");
+  await publishOnlineRound("finalChoice");
+  setScreen("finalChoice");
 }
 
 async function chooseFinal(choice) {
@@ -445,6 +485,7 @@ async function chooseFinal(choice) {
 }
 
 async function nextRound() {
+  if (state.mode === "online" && !isHost()) throw new Error("次のゲームを始められるのは1Pです。");
   state.game = startNextRound(state.game);
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   if (state.mode === "online") await publishOnlineRound("reveal");
@@ -477,7 +518,9 @@ function syncOnlineRoom(room) {
     roundNumber: room.round_number || 0,
     round: hydrateRoomRound(room)
   };
-  if (room.status && !["waiting", "ready"].includes(room.status)) state.screen = room.status;
+  if (room.status && !["waiting", "ready"].includes(room.status)) {
+    state.screen = localScreenForRoomStatus(room.status, state.game.round);
+  }
 }
 
 function hydrateRoomRound(room) {
@@ -541,4 +584,13 @@ function phaseName(status) {
     finalChoice: "最終選択",
     result: "結果"
   }[status] || "待機中";
+}
+
+function isHost() {
+  return state.onlineSlot === "p1" || online.room?.host_player_id === online.playerId;
+}
+
+function localScreenForRoomStatus(status, round) {
+  if (status === "discussion" && (!round.abilityDone.p1 || !round.abilityDone.p2)) return "ability";
+  return status;
 }
