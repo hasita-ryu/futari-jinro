@@ -411,6 +411,7 @@ function renderResult() {
 
 async function createOnlineRoom() {
   const name = document.querySelector("#hostName").value.trim() || "プレイヤー1";
+  state.mode = "online";
   state.game = createInitialGame({ mode: "online", names: { p1: name, p2: "" }, selectedRoleIds: state.selectedRoleIds });
   const room = await online.createRoom(name, state.selectedRoleIds);
   state.onlineSlot = "p1";
@@ -422,6 +423,7 @@ async function joinOnlineRoom() {
   const code = normalizeCode(document.querySelector("#roomCode").value);
   const name = document.querySelector("#guestName").value.trim() || "プレイヤー2";
   const { room, slot } = await online.joinRoom(code, name);
+  state.mode = "online";
   state.onlineSlot = slot;
   syncOnlineRoom(room);
   state.screen = "onlineCreate";
@@ -544,6 +546,7 @@ async function publishOnlineRound(screen) {
 }
 
 function syncOnlineRoom(room) {
+  state.mode = "online";
   const resolvedSlot = resolveOnlineSlot(room);
   if (!state.onlineSlot && resolvedSlot) state.onlineSlot = resolvedSlot;
   const names = room.player_names || { p1: "プレイヤー1", p2: "プレイヤー2" };
