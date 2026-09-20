@@ -7,7 +7,7 @@ export function hasSupabaseConfig() {
   return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
 }
 
-export function createSupabaseClient(playerId = localStorage.getItem("honobono_werewolf_player_id") || "") {
+export function createSupabaseClient(playerId = sessionStorage.getItem("honobono_werewolf_player_id") || "") {
   if (!hasSupabaseConfig()) {
     throw new Error("SupabaseのURLとanon keyが未設定です。js/supabase.js を編集してください。");
   }

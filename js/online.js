@@ -4,11 +4,17 @@ const PLAYER_KEY = "honobono_werewolf_player_id";
 const SESSION_KEY = "honobono_werewolf_online_session";
 
 export function getOrCreatePlayerId() {
-  let id = localStorage.getItem(PLAYER_KEY);
+  let id = sessionStorage.getItem(PLAYER_KEY);
   if (!id) {
     id = crypto.randomUUID();
-    localStorage.setItem(PLAYER_KEY, id);
+    sessionStorage.setItem(PLAYER_KEY, id);
   }
+  return id;
+}
+
+function createFreshPlayerId() {
+  const id = crypto.randomUUID();
+  sessionStorage.setItem(PLAYER_KEY, id);
   return id;
 }
 
@@ -28,6 +34,15 @@ export class OnlineGame {
       throw new Error("Supabase設定がまだ入っていません。READMEの手順でURLとanon keyを設定してください。");
     }
     if (!this.client) this.client = createSupabaseClient(this.playerId);
+  }
+
+  resetClientForFreshPlayer() {
+    this.playerId = createFreshPlayerId();
+    this.client = null;
+    this.room = null;
+    this.secret = null;
+    sessionStorage.removeItem(SESSION_KEY);
+    this.ensureReady();
   }
 
   onChange(listener) {
@@ -71,6 +86,10 @@ export class OnlineGame {
     const { data: room, error } = await this.client.from("rooms").select("*").eq("code", cleanCode).maybeSingle();
     if (error) throw friendlyError(error, "部屋を探せませんでした。");
     if (!room) throw new Error("そのルームコードの部屋が見つかりません。");
+
+    if (room.host_player_id === this.playerId && !room.guest_player_id) {
+      this.resetClientForFreshPlayer();
+    }
 
     if (room.host_player_id === this.playerId || room.guest_player_id === this.playerId) {
       const slot = room.host_player_id === this.playerId ? "p1" : "p2";
@@ -193,13 +212,13 @@ export class OnlineGame {
   }
 
   leaveLocalSession() {
-    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
     this.room = null;
     this.secret = null;
   }
 
   saveSession(slot, code) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ slot, code, playerId: this.playerId }));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ slot, code, playerId: this.playerId }));
   }
 
   async createUniqueCode() {
@@ -215,7 +234,7 @@ export class OnlineGame {
 
 export function readSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null");
   } catch {
     return null;
   }
