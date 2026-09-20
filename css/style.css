@@ -181,7 +181,47 @@ input[type="text"], input[type="number"], input[type="tel"] {
 .field-card input { position: absolute; opacity: 0; }
 .field-card input:checked + span { background: var(--yellow); }
 
-.result-summary { background: #fff8d6; }
+.used-card-strip {
+  display: grid;
+  gap: 8px;
+  border: 2px dashed var(--ink);
+  border-radius: 14px;
+  background: #fffef8;
+  padding: 12px;
+}
+.used-card-strip > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.used-card-strip span {
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--yellow);
+  padding: 5px 9px;
+  font-weight: 800;
+  font-size: 0.86rem;
+}
+
+.result-stage {
+  display: grid;
+  gap: 12px;
+}
+.result-title {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.result-title h2 {
+  font-size: clamp(1.7rem, 7vw, 2.7rem);
+}
+.versus-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: stretch;
+}
 .score-board {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -211,34 +251,69 @@ input[type="text"], input[type="number"], input[type="tel"] {
   font-size: 2.1rem;
   line-height: 1;
 }
-.result-list { display: grid; gap: 12px; }
-.result-row { padding: 14px; display: grid; gap: 10px; }
+.game-score strong { font-size: 2.6rem; }
+.result-row {
+  padding: 10px;
+  display: grid;
+  gap: 9px;
+  align-content: start;
+  min-width: 0;
+}
 .result-head {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.result-head > strong {
+  text-align: center;
+  font-size: 0.95rem;
 }
 .score-delta {
   border: 3px solid var(--ink);
-  border-radius: 999px;
+  border-radius: 16px;
   background: var(--orange);
-  padding: 6px 12px;
+  padding: 8px 6px;
   font-weight: 900;
+  font-size: clamp(2rem, 10vw, 3.2rem);
+  line-height: 1;
+  text-align: center;
   white-space: nowrap;
 }
 .choice-strip {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 7px;
 }
 .choice-strip > div {
   border: 2px dashed var(--ink);
   border-radius: 12px;
   background: #fffef8;
-  padding: 10px;
+  padding: 8px;
   display: grid;
   gap: 2px;
+  text-align: center;
+}
+.choice-strip strong {
+  font-size: 1.15rem;
+}
+.result-row .role-card {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+  padding: 10px;
+}
+.result-row .role-card .mini-character {
+  width: 54px;
+  height: 54px;
+}
+.result-row .role-card p {
+  display: none;
+}
+.result-hidden-card {
+  --role-color: #fff8d6;
+  min-height: 151px;
+  align-content: center;
 }
 .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d96b61; margin-right: 7px; }
 .status-dot.on { background: #70b879; }

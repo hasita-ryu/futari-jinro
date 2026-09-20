@@ -15,6 +15,8 @@ const state = {
   selectedRoleIds: defaultRoleIds(),
   offlineStep: { player: "p1", revealOpen: false, roleSeen: false },
   onlineRevealConfirmed: false,
+  resultRolesRevealed: false,
+  discussionUnlockAt: 0,
   lastRoundNumber: 0,
   onlineSlot: null,
   onlinePresence: [],
@@ -165,6 +167,8 @@ function goHome() {
   state.onlineSlot = null;
   state.currentSecret = null;
   state.onlineRevealConfirmed = false;
+  state.resultRolesRevealed = false;
+  state.discussionUnlockAt = 0;
   state.lastRoundNumber = 0;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   setScreen("home");
@@ -360,13 +364,20 @@ function renderAbility() {
 function renderDiscussion() {
   const done = state.game.round.abilityDone;
   const onlineIncomplete = isOnlineSession() && (!done.p1 || !done.p2);
-  const canHostAdvance = isHost() && !onlineIncomplete;
+  const locked = Date.now() < state.discussionUnlockAt;
+  const canHostAdvance = isHost() && !onlineIncomplete && !locked;
+  if (locked) setTimeout(paint, Math.min(1000, state.discussionUnlockAt - Date.now()));
   render(app, page("話し合い", `
     <div class="panel">
       <h2>話し合ってください</h2>
       <p>目安は3分です。オンラインでは通話や対面で会話してください。</p>
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
+      <div class="used-card-strip">
+        <strong>このラウンドのカード</strong>
+        <div>${usedRoundCards(state.game.round).map((id) => `<span>${roleName(id)}</span>`).join("")}</div>
+      </div>
       ${onlineIncomplete ? `<p class="muted">まだ全員の能力が終わっていません。終わっていない人は能力画面に戻ってください。</p>${button("能力画面へ戻る", "ability-screen", "primary")}` : ""}
+      ${isHost() && !onlineIncomplete && locked ? `<button class="btn primary" type="button" disabled>少し話してから進む</button>` : ""}
       ${canHostAdvance ? button("最終選択へ進む", "start-final", "primary") : ""}
       ${isOnlineSession() && !isHost() && !onlineIncomplete ? `<p class="muted">1Pが最終選択へ進めます。</p>` : ""}
       ${onlineRoomNav()}
@@ -398,45 +409,54 @@ function renderResult() {
   const game = state.game;
   const round = game.round;
   const result = round.result;
+  if (!state.resultRolesRevealed) {
+    setTimeout(() => {
+      state.resultRolesRevealed = true;
+      paint();
+    }, 1000);
+  }
   render(app, page("結果", `
-    <div class="panel result-summary">
-      <span class="pill">ラウンド${round.number}</span>
-      <h2>${result.summary}</h2>
-      <div class="score-board">
-        <div>
-          <small>${escapeHtml(playerLabel(game.names, "p1"))}</small>
-          <strong>${game.scores.p1}</strong>
-        </div>
+    <div class="result-stage">
+      <div class="result-title">
+        <span class="pill">ラウンド${round.number}</span>
+        <h2>${result.summary}</h2>
+      </div>
+      <div class="versus-result">
+        ${resultPlayerCard(game, round, result, "p1")}
+        ${resultPlayerCard(game, round, result, "p2")}
+      </div>
+      <div class="score-board game-score">
+        <div><small>${escapeHtml(playerLabel(game.names, "p1"))}</small><strong>${game.scores.p1}</strong></div>
         <span>累計</span>
-        <div>
-          <small>${escapeHtml(playerLabel(game.names, "p2"))}</small>
-          <strong>${game.scores.p2}</strong>
-        </div>
+        <div><small>${escapeHtml(playerLabel(game.names, "p2"))}</small><strong>${game.scores.p2}</strong></div>
       </div>
     </div>
-    <div class="result-list">
-      ${resultPlayerCard(game, round, result, "p1")}
-      ${resultPlayerCard(game, round, result, "p2")}
-      ${onlineRoomNav()}
-    </div>
+    ${onlineRoomNav()}
   `, `${isOnlineSession() ? (isHost() ? button("次のゲーム", "next-round", "primary") : `<div class="panel"><p class="muted">1Pが次のゲームを開始します。</p></div>`) : button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
 }
 
 function resultPlayerCard(game, round, result, playerId) {
   const delta = result.playerDelta[playerId] || 0;
+  const roleMarkup = state.resultRolesRevealed
+    ? roleCard(round.roles[playerId], { showCamp: true })
+    : `<div class="role-card result-hidden-card"><div class="mini-character"></div><div><h3>?</h3><p>役職発表中...</p></div></div>`;
   return `
     <article class="result-row">
       <div class="result-head">
         <strong>${escapeHtml(playerLabel(game.names, playerId))}</strong>
-        <span class="score-delta">+${delta}点</span>
+        <span class="score-delta">+${delta}</span>
       </div>
-      ${roleCard(round.roles[playerId], { showCamp: true })}
       <div class="choice-strip">
-        <div><small>選んだ手</small><strong>${choiceName(round.choices[playerId])}</strong></div>
+        <div><small>選択</small><strong>${choiceName(round.choices[playerId])}</strong></div>
         <div><small>判定</small><strong>${choiceName(round.effectiveChoices[playerId])}</strong></div>
       </div>
+      ${roleMarkup}
     </article>
   `;
+}
+
+function usedRoundCards(round) {
+  return [round.roles.p1, round.roles.p2, ...round.table.map((card) => card.roleId)].filter(Boolean);
 }
 
 async function createOnlineRoom() {
@@ -481,6 +501,7 @@ async function startSelectedRoles() {
   state.game.selectedRoleIds = state.selectedRoleIds;
   state.game = startNextRound(state.game);
   state.onlineRevealConfirmed = false;
+  state.resultRolesRevealed = false;
   state.lastRoundNumber = state.game.round.number;
   await publishOnlineRound(PREPARE_STATUS);
   setScreen("reveal");
@@ -512,6 +533,7 @@ async function finishAbility() {
     return;
   }
   const nextStatus = state.game.round.abilityDone.p1 && state.game.round.abilityDone.p2 ? "discussion" : PREPARE_STATUS;
+  if (nextStatus === "discussion") state.discussionUnlockAt = Date.now() + 6000;
   await publishOnlineRound(nextStatus);
   setScreen(localScreenForRoomStatus(nextStatus, state.game.round));
 }
@@ -522,10 +544,12 @@ async function startDiscussion() {
     return;
   }
   if (!isHost()) throw new Error("話し合いへ進めるのは1Pです。");
+  if (Date.now() < state.discussionUnlockAt) throw new Error("少し話してから進んでください。");
   if (!state.game.round.abilityDone.p1 || !state.game.round.abilityDone.p2) {
     throw new Error("2人とも能力を終えるまで話し合いへ進めません。");
   }
   await publishOnlineRound("discussion");
+  state.discussionUnlockAt = Date.now() + 6000;
   setScreen("discussion");
 }
 
@@ -544,6 +568,7 @@ async function chooseFinal(choice) {
   if (!playerId) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
   state.game.round = setFinalChoice(state.game.round, playerId, choice);
   if (state.game.round.choices.p1 && state.game.round.choices.p2) state.game = resolveResult(state.game);
+  if (state.game.round.result) state.resultRolesRevealed = false;
   if (state.mode === "online") await publishOnlineRound(state.game.round.result ? "result" : "finalChoice");
   setScreen(state.game.round.result ? "result" : "finalChoice");
 }
@@ -552,6 +577,8 @@ async function nextRound() {
   if (state.mode === "online" && !isHost()) throw new Error("次のゲームを始められるのは1Pです。");
   state.game = startNextRound(state.game);
   state.onlineRevealConfirmed = false;
+  state.resultRolesRevealed = false;
+  state.discussionUnlockAt = 0;
   state.lastRoundNumber = state.game.round.number;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   if (state.mode === "online") await publishOnlineRound(PREPARE_STATUS);
@@ -592,7 +619,9 @@ function syncOnlineRoom(room) {
   if (state.game.round.number && state.lastRoundNumber !== state.game.round.number) {
     state.lastRoundNumber = state.game.round.number;
     state.onlineRevealConfirmed = Boolean(state.game.round.abilityDone?.[currentPlayerId()]);
+    state.resultRolesRevealed = false;
   }
+  if (room.status === "discussion" && !state.discussionUnlockAt) state.discussionUnlockAt = Date.now() + 6000;
   if (room.status && !["waiting", "ready"].includes(room.status)) {
     state.screen = localScreenForRoomStatus(room.status, state.game.round);
   }
