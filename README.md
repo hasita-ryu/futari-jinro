@@ -30,12 +30,13 @@ python3 -m http.server 8000
 
 1. [Supabase](https://supabase.com/) にログインします。
 2. `New project` から無料プロジェクトを作ります。
-3. 左メニューの `SQL Editor` を開きます。
-4. `supabase/schema.sql` の中身を貼り付けて実行します。
-5. 続けて `supabase/policies.sql` の中身を貼り付けて実行します。
-6. 左メニューの `Project Settings` → `API` を開きます。
-7. `Project URL` と `anon public` key をコピーします。
-8. `js/supabase.js` を開いて、次の2か所に貼り付けます。
+3. 左メニューの `Authentication` → `Providers` を開き、`Anonymous sign-ins` を有効にします。
+4. 左メニューの `SQL Editor` を開きます。
+5. `supabase/schema.sql` の中身を貼り付けて実行します。
+6. 続けて `supabase/policies.sql` の中身を貼り付けて実行します。
+7. 左メニューの `Project Settings` → `API` を開きます。
+8. `Project URL` と `Publishable key` をコピーします。
+9. `js/supabase.js` を開いて、次の2か所に貼り付けます。
 
 ```js
 export const SUPABASE_CONFIG = {
@@ -44,7 +45,7 @@ export const SUPABASE_CONFIG = {
 };
 ```
 
-`service_role` key は絶対に貼り付けないでください。
+`service_role` key や `secret` key は絶対に貼り付けないでください。
 
 ## GitHub Pages公開手順
 
@@ -87,6 +88,6 @@ export const SUPABASE_CONFIG = {
 
 ## セキュリティメモ
 
-`player_secrets` はRLSで自分の一時プレイヤーIDの行だけ読めるようにしています。anon keyは公開される前提で問題ありません。
+オンライン参加者はSupabaseの匿名ログインで発行される `auth.uid()` で識別します。`player_secrets` はRLSで自分の参加者IDの行だけ読めるようにしています。Publishable keyは公開される前提で問題ありません。
 
 初期版ではGitHub Pagesだけで動くことを優先し、ラウンド同期のために `rooms.public_state` に進行状態を保存しています。より厳密に「DevToolsで相手の情報を一切見られない」運用にする場合は、配布・能力・結果計算をSupabase Edge FunctionまたはSecurity Definer RPCへ移し、`rooms.public_state` から未公開の役職や場札を完全に除外してください。

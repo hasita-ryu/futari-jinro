@@ -1,21 +1,10 @@
-import { createSupabaseClient, hasSupabaseConfig } from "./supabase.js";
+import { clearAnonymousSession, createSupabaseClient, ensureAnonymousUser, hasSupabaseConfig } from "./supabase.js";
 
 const PLAYER_KEY = "honobono_werewolf_player_id";
 const SESSION_KEY = "honobono_werewolf_online_session";
 
 export function getOrCreatePlayerId() {
-  let id = sessionStorage.getItem(PLAYER_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    sessionStorage.setItem(PLAYER_KEY, id);
-  }
-  return id;
-}
-
-function createFreshPlayerId() {
-  const id = crypto.randomUUID();
-  sessionStorage.setItem(PLAYER_KEY, id);
-  return id;
+  return sessionStorage.getItem(PLAYER_KEY) || "";
 }
 
 export class OnlineGame {
@@ -29,20 +18,27 @@ export class OnlineGame {
     this.listeners = new Set();
   }
 
-  ensureReady() {
+  async ensureReady() {
     if (!hasSupabaseConfig()) {
       throw new Error("Supabase設定がまだ入っていません。READMEの手順でURLとanon keyを設定してください。");
     }
-    if (!this.client) this.client = createSupabaseClient(this.playerId);
+    if (!this.client) this.client = createSupabaseClient();
+    const playerId = await ensureAnonymousUser(this.client);
+    if (playerId !== this.playerId) {
+      this.playerId = playerId;
+      sessionStorage.setItem(PLAYER_KEY, playerId);
+    }
   }
 
-  resetClientForFreshPlayer() {
-    this.playerId = createFreshPlayerId();
-    this.client = null;
+  async resetClientForFreshPlayer() {
+    await clearAnonymousSession(this.client);
+    this.client = createSupabaseClient();
+    this.playerId = "";
     this.room = null;
     this.secret = null;
     sessionStorage.removeItem(SESSION_KEY);
-    this.ensureReady();
+    sessionStorage.removeItem(PLAYER_KEY);
+    await this.ensureReady();
   }
 
   onChange(listener) {
@@ -55,7 +51,7 @@ export class OnlineGame {
   }
 
   async createRoom(playerName, selectedRoleIds) {
-    this.ensureReady();
+    await this.ensureReady();
     const roomCode = await this.createUniqueCode();
     const now = new Date().toISOString();
     const room = {
@@ -79,7 +75,7 @@ export class OnlineGame {
   }
 
   async joinRoom(code, playerName) {
-    this.ensureReady();
+    await this.ensureReady();
     const cleanCode = normalizeCode(code);
     if (!/^\d{6}$/.test(cleanCode)) throw new Error("ルームコードは6桁の数字で入力してください。");
 
@@ -88,7 +84,7 @@ export class OnlineGame {
     if (!room) throw new Error("そのルームコードの部屋が見つかりません。");
 
     if (room.host_player_id === this.playerId && !room.guest_player_id) {
-      this.resetClientForFreshPlayer();
+      await this.resetClientForFreshPlayer();
     }
 
     if (room.host_player_id === this.playerId || room.guest_player_id === this.playerId) {
@@ -119,7 +115,7 @@ export class OnlineGame {
   async restoreSession() {
     const saved = readSession();
     if (!saved?.code) return null;
-    this.ensureReady();
+    await this.ensureReady();
     const { data, error } = await this.client.from("rooms").select("*").eq("code", saved.code).maybeSingle();
     if (error || !data) return null;
     if (data.host_player_id !== this.playerId && data.guest_player_id !== this.playerId) return null;
@@ -130,7 +126,7 @@ export class OnlineGame {
   }
 
   async updateRoom(patch) {
-    this.ensureReady();
+    await this.ensureReady();
     if (!this.room?.code) throw new Error("部屋情報がありません。");
     const { data, error } = await this.client
       .from("rooms")
@@ -144,7 +140,7 @@ export class OnlineGame {
   }
 
   async upsertSecret(slot, roundNumber, secretState, targetPlayerId = this.playerId) {
-    this.ensureReady();
+    await this.ensureReady();
     if (!this.room?.code) throw new Error("部屋情報がありません。");
     const row = {
       room_code: this.room.code,
@@ -161,6 +157,7 @@ export class OnlineGame {
   }
 
   async fetchSecret() {
+    await this.ensureReady();
     if (!this.room) return null;
     const { data, error } = await this.client
       .from("player_secrets")
@@ -175,7 +172,7 @@ export class OnlineGame {
   }
 
   async subscribe(code) {
-    this.ensureReady();
+    await this.ensureReady();
     await this.unsubscribe();
 
     this.roomChannel = this.client
