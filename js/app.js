@@ -481,8 +481,9 @@ async function finishAbility() {
     }
     return;
   }
-  await publishOnlineRound(PREPARE_STATUS);
-  setScreen("ability");
+  const nextStatus = state.game.round.abilityDone.p1 && state.game.round.abilityDone.p2 ? "discussion" : PREPARE_STATUS;
+  await publishOnlineRound(nextStatus);
+  setScreen(localScreenForRoomStatus(nextStatus, state.game.round));
 }
 
 async function startDiscussion() {
