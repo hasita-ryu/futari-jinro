@@ -116,6 +116,8 @@ async function handleAction(action) {
     online: () => setScreen("onlineHome"),
     "online-create-screen": () => setScreen("onlineCreate"),
     "online-join-screen": () => setScreen("onlineJoin"),
+    "room-lobby": () => setScreen("onlineCreate"),
+    "resume-game": () => setScreen(currentOnlineGameScreen()),
     "create-room": createOnlineRoom,
     "join-room": joinOnlineRoom,
     "copy-code": copyCode,
@@ -228,6 +230,7 @@ function renderOnlineCreate() {
   }
   const room = online.room;
   const ready = Boolean(room?.guest_player_id);
+  const inGame = isOnlineGameActive(room?.status);
   render(app, page("ルーム", `
     <div class="panel">
       <p>このコードを相手に伝えてください。</p>
@@ -235,7 +238,8 @@ function renderOnlineCreate() {
       ${smallButton("コピー", "copy-code")}
       <p><span class="status-dot ${ready ? "on" : ""}"></span>${ready ? "2人そろいました" : "相手を待っています"}</p>
       <p class="muted">接続中: ${state.onlinePresence.length}人</p>
-      ${state.onlineSlot === "p1" && ready ? button("役職を選ぶ", "go-role-select", "primary") : ""}
+      ${inGame ? `<p class="muted">現在の進行: ${phaseName(room.status)}</p>${button("ゲーム画面へ戻る", "resume-game", "primary")}` : ""}
+      ${!inGame && state.onlineSlot === "p1" && ready ? button("役職を選ぶ", "go-role-select", "primary") : ""}
     </div>
   `, button("ホームへ戻る", "leave-online")));
 }
@@ -278,7 +282,7 @@ function renderReveal() {
       ${open && roleId ? roleCard(roleId, { showCamp: true }) : `<p class="muted">準備ができたら、自分だけで役職を開いてください。</p>`}
       ${revealControl}
     </div>
-  `));
+  `, onlineRoomFooter()));
 }
 
 function renderAbility() {
@@ -296,7 +300,7 @@ function renderAbility() {
         ${revealedPeek(log)}
         ${onlineWaiting ? `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了すると話し合いへ進みます。</p>` : button("話し合いへ", "finish-ability", "primary")}
       </div>
-    `));
+    `, onlineRoomFooter()));
     return;
   }
   const ability = role?.ability;
@@ -309,7 +313,7 @@ function renderAbility() {
       ${controls}
       ${button("能力を使う", "finish-ability", "primary")}
     </div>
-  `));
+  `, onlineRoomFooter()));
 }
 
 function renderDiscussion() {
@@ -321,7 +325,7 @@ function renderDiscussion() {
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
       ${done.p1 && done.p2 ? button("最終選択へ", "start-final", "primary") : ""}
     </div>
-  `));
+  `, onlineRoomFooter()));
 }
 
 function renderFinalChoice() {
@@ -335,7 +339,7 @@ function renderFinalChoice() {
       ${own ? `<p class="muted">相手の選択を待っています。</p>` : `<div class="grid-2">${button("あくしゅ", "handshake", "primary")}${button("まもる", "protect")}</div>`}
       <p class="muted">相手: ${round.choices[otherId] ? "選択済み" : "未選択"}</p>
     </div>
-  `));
+  `, onlineRoomFooter()));
   if (round.result) setTimeout(() => setScreen("result"), 150);
 }
 
@@ -350,7 +354,7 @@ function renderResult() {
       <div class="result-row"><strong>${playerLabel(game.names, "p2")}</strong>${roleCard(round.roles.p2, { showCamp: true })}<p>選択: ${choiceName(round.choices.p2)} → 判定: ${choiceName(round.effectiveChoices.p2)} / +${result.playerDelta.p2}点</p></div>
       <p><strong>累計</strong> ${game.scores.p1} - ${game.scores.p2}</p>
     </div>
-  `, `${button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+  `, `${button("次のゲーム", "next-round", "primary")} ${onlineRoomFooter()} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
 }
 
 async function createOnlineRoom() {
@@ -501,4 +505,27 @@ function getVisibleSecret(playerId) {
     roleId: state.game.round.roles[playerId],
     abilityLog: state.game.round.abilityLog[playerId]
   };
+}
+
+function onlineRoomFooter() {
+  return state.mode === "online" ? button("ルーム画面へ", "room-lobby") : "";
+}
+
+function isOnlineGameActive(status) {
+  return ["reveal", "ability", "discussion", "finalChoice", "result"].includes(status);
+}
+
+function currentOnlineGameScreen() {
+  const status = online.room?.status;
+  return isOnlineGameActive(status) ? status : "onlineCreate";
+}
+
+function phaseName(status) {
+  return {
+    reveal: "役職確認",
+    ability: "能力",
+    discussion: "話し合い",
+    finalChoice: "最終選択",
+    result: "結果"
+  }[status] || "待機中";
 }
