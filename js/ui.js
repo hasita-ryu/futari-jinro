@@ -17,6 +17,10 @@ export function smallButton(label, action, extra = "") {
   return `<button class="btn small ${extra}" data-action="${action}" type="button">${label}</button>`;
 }
 
+export function holdRevealButton(label = "長押しで役職を見る") {
+  return `<button class="btn hold primary" data-hold-reveal="true" type="button">${label}</button>`;
+}
+
 export function page(title, body, footer = "") {
   return `
     <section class="page">

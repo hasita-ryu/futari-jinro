@@ -2,17 +2,18 @@ import { CHOICES, createInitialGame, publicRoundState, resolveAbility, resolveRe
 import { defaultRoleIds, getRole, ROLE_DEFINITIONS, roleName } from "./roles.js";
 import { OnlineGame, normalizeCode, readSession } from "./online.js";
 import { hasSupabaseConfig } from "./supabase.js";
-import { button, choiceName, escapeHtml, page, playerLabel, revealedPeek, render, roleCard, roleToggleList, smallButton, tablePicker, toast } from "./ui.js";
+import { button, choiceName, escapeHtml, holdRevealButton, page, playerLabel, revealedPeek, render, roleCard, roleToggleList, smallButton, tablePicker, toast } from "./ui.js";
 
 const app = document.querySelector("#app");
 const online = new OnlineGame();
+let holdRevealActive = false;
 
 const state = {
   mode: null,
   screen: "home",
   game: null,
   selectedRoleIds: defaultRoleIds(),
-  offlineStep: { player: "p1", revealOpen: false },
+  offlineStep: { player: "p1", revealOpen: false, roleSeen: false },
   onlineSlot: null,
   onlinePresence: [],
   currentSecret: null
@@ -54,6 +55,23 @@ document.addEventListener("click", async (event) => {
   } catch (error) {
     toast(error.message || "うまく処理できませんでした。");
   }
+});
+
+document.addEventListener("pointerdown", (event) => {
+  if (!event.target.closest("[data-hold-reveal]")) return;
+  holdRevealActive = true;
+  state.offlineStep.revealOpen = true;
+  state.offlineStep.roleSeen = true;
+  paint();
+});
+
+["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
+  document.addEventListener(eventName, () => {
+    if (!holdRevealActive) return;
+    holdRevealActive = false;
+    state.offlineStep.revealOpen = false;
+    paint();
+  });
 });
 
 document.addEventListener("change", (event) => {
@@ -115,10 +133,6 @@ async function handleAction(action) {
       setScreen("roleSelect");
     },
     "start-selected-roles": startSelectedRoles,
-    "open-reveal": () => {
-      state.offlineStep.revealOpen = true;
-      paint();
-    },
     "confirm-reveal": confirmReveal,
     "finish-ability": finishAbility,
     "start-final": () => setScreen("finalChoice"),
@@ -144,7 +158,7 @@ function goHome() {
   state.game = null;
   state.onlineSlot = null;
   state.currentSecret = null;
-  state.offlineStep = { player: "p1", revealOpen: false };
+  state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   setScreen("home");
 }
 
@@ -253,11 +267,16 @@ function renderReveal() {
   const name = playerLabel(state.game?.names, playerId);
   const roleId = secret?.roleId;
   const open = state.mode === "online" || state.offlineStep.revealOpen;
+  const revealControl = state.mode === "online"
+    ? button("能力へ進む", "confirm-reveal", "primary")
+    : open
+      ? `<p class="muted">指を離すとカードは隠れます。</p>`
+      : `${holdRevealButton()}${state.offlineStep.roleSeen ? button("覚えたので能力へ進む", "confirm-reveal", "primary") : ""}<p class="muted">オフラインでは、長押ししている間だけ役職を表示します。</p>`;
   render(app, page("役職確認", `
     <div class="panel">
       <h2>${escapeHtml(name)}だけが画面を見てください</h2>
       ${open && roleId ? roleCard(roleId, { showCamp: true }) : `<p class="muted">準備ができたら、自分だけで役職を開いてください。</p>`}
-      ${open ? button("能力へ進む", "confirm-reveal", "primary") : button("役職を見る", "open-reveal", "primary")}
+      ${revealControl}
     </div>
   `));
 }
@@ -269,11 +288,13 @@ function renderAbility() {
   const role = getRole(secret?.roleId);
   const log = secret?.abilityLog || round.abilityLog[playerId];
   if (round.abilityDone[playerId] || log?.length) {
+    const otherId = playerId === "p1" ? "p2" : "p1";
+    const onlineWaiting = state.mode === "online" && !round.abilityDone[otherId];
     render(app, page("能力結果", `
       <div class="panel">
         ${roleCard(secret?.roleId, { showCamp: true })}
         ${revealedPeek(log)}
-        ${button("完了", "finish-ability", "primary")}
+        ${onlineWaiting ? `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了すると話し合いへ進みます。</p>` : button("話し合いへ", "finish-ability", "primary")}
       </div>
     `));
     return;
@@ -364,7 +385,7 @@ async function startSelectedRoles() {
     const p2 = document.querySelector("#p2Name")?.value?.trim() || state.game?.names?.p2 || "プレイヤー2";
     state.game = createInitialGame({ mode: "offline", names: { p1, p2 }, selectedRoleIds: state.selectedRoleIds });
     state.game = startNextRound(state.game);
-    state.offlineStep = { player: "p1", revealOpen: false };
+    state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
     setScreen("reveal");
     return;
   }
@@ -375,6 +396,9 @@ async function startSelectedRoles() {
 }
 
 async function confirmReveal() {
+  if (state.mode === "offline" && !state.offlineStep.roleSeen) {
+    throw new Error("先に長押しで自分の役職を確認してください。");
+  }
   state.offlineStep.revealOpen = false;
   setScreen("ability");
 }
@@ -387,15 +411,16 @@ async function finishAbility() {
   }
   if (state.mode === "offline") {
     if (playerId === "p1") {
-      state.offlineStep = { player: "p2", revealOpen: false };
+      state.offlineStep = { player: "p2", revealOpen: false, roleSeen: false };
       setScreen("reveal");
     } else {
       setScreen("discussion");
     }
     return;
   }
-  await publishOnlineRound("discussion");
-  setScreen("discussion");
+  const nextScreen = state.game.round.abilityDone.p1 && state.game.round.abilityDone.p2 ? "discussion" : "ability";
+  await publishOnlineRound(nextScreen);
+  setScreen(nextScreen);
 }
 
 async function chooseFinal(choice) {
@@ -408,7 +433,7 @@ async function chooseFinal(choice) {
 
 async function nextRound() {
   state.game = startNextRound(state.game);
-  state.offlineStep = { player: "p1", revealOpen: false };
+  state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   if (state.mode === "online") await publishOnlineRound("reveal");
   setScreen("reveal");
 }
