@@ -283,7 +283,15 @@ function renderRoleSelect() {
 
 function renderReveal() {
   const playerId = currentPlayerId();
+  if (!playerId) {
+    renderPlayerResolving();
+    return;
+  }
   const secret = getVisibleSecret(playerId);
+  if (state.mode === "online" && !secret?.roleId) {
+    renderSecretWaiting();
+    return;
+  }
   const name = playerLabel(state.game?.names, playerId);
   const roleId = secret?.roleId;
   const open = state.mode === "online" || state.offlineStep.revealOpen;
@@ -304,7 +312,15 @@ function renderReveal() {
 
 function renderAbility() {
   const playerId = currentPlayerId();
+  if (!playerId) {
+    renderPlayerResolving();
+    return;
+  }
   const secret = getVisibleSecret(playerId);
+  if (state.mode === "online" && !secret?.roleId) {
+    renderSecretWaiting();
+    return;
+  }
   const round = state.game.round;
   const role = getRole(secret?.roleId);
   const log = secret?.abilityLog || round.abilityLog[playerId];
@@ -360,6 +376,10 @@ function renderDiscussion() {
 
 function renderFinalChoice() {
   const playerId = currentPlayerId();
+  if (!playerId) {
+    renderPlayerResolving();
+    return;
+  }
   const round = state.game.round;
   const own = round.choices[playerId];
   const otherId = playerId === "p1" ? "p2" : "p1";
@@ -445,6 +465,7 @@ async function confirmReveal() {
 
 async function finishAbility() {
   const playerId = currentPlayerId();
+  if (!playerId) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
   const indexes = [...document.querySelectorAll('input[name="tableIndex"]:checked')].map((input) => Number(input.value));
   if (!state.game.round.abilityDone[playerId]) {
     state.game.round = resolveAbility(state.game.round, playerId, { indexes, index: indexes[0] });
@@ -487,6 +508,7 @@ async function startFinalChoice() {
 
 async function chooseFinal(choice) {
   const playerId = currentPlayerId();
+  if (!playerId) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
   state.game.round = setFinalChoice(state.game.round, playerId, choice);
   if (state.game.round.choices.p1 && state.game.round.choices.p2) state.game = resolveResult(state.game);
   if (state.mode === "online") await publishOnlineRound(state.game.round.result ? "result" : "finalChoice");
@@ -504,6 +526,8 @@ async function nextRound() {
 }
 
 async function publishOnlineRound(screen) {
+  const slot = getOnlineSlot();
+  if (!slot) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
   const roomPatch = {
     status: screen,
     round_number: state.game.round.number,
@@ -512,14 +536,15 @@ async function publishOnlineRound(screen) {
     public_state: publicRoundState(state.game.round),
     scores: state.game.scores
   };
-  await online.upsertSecret(state.onlineSlot, state.game.round.number, playerSecretState(state.game.round, state.onlineSlot));
-  if (state.onlineSlot === "p1" && online.room?.guest_player_id) {
+  await online.upsertSecret(slot, state.game.round.number, playerSecretState(state.game.round, slot));
+  if (slot === "p1" && online.room?.guest_player_id) {
     await online.upsertSecret("p2", state.game.round.number, playerSecretState(state.game.round, "p2"), online.room.guest_player_id);
   }
   await online.updateRoom(roomPatch);
 }
 
 function syncOnlineRoom(room) {
+  state.onlineSlot = resolveOnlineSlot(room);
   const names = room.player_names || { p1: "プレイヤー1", p2: "プレイヤー2" };
   state.game = {
     mode: "online",
@@ -560,13 +585,13 @@ function hydrateRoomRound(room) {
 }
 
 function currentPlayerId() {
-  if (state.mode === "online") return state.onlineSlot || "p1";
+  if (state.mode === "online") return getOnlineSlot();
   return state.offlineStep.player;
 }
 
 function getVisibleSecret(playerId) {
   if (state.mode === "online") {
-    return state.currentSecret || { roleId: state.game?.round?.roles?.[playerId], abilityLog: [] };
+    return state.currentSecret || null;
   }
   return {
     roleId: state.game.round.roles[playerId],
@@ -601,7 +626,7 @@ function phaseName(status) {
 }
 
 function isHost() {
-  return state.onlineSlot === "p1" || online.room?.host_player_id === online.playerId;
+  return getOnlineSlot() === "p1";
 }
 
 function localScreenForRoomStatus(status, round) {
@@ -611,4 +636,44 @@ function localScreenForRoomStatus(status, round) {
   }
   if (status === "discussion" && (!round.abilityDone.p1 || !round.abilityDone.p2)) return "ability";
   return status;
+}
+
+function getOnlineSlot() {
+  if (state.onlineSlot) return state.onlineSlot;
+  const fromRoom = resolveOnlineSlot(online.room);
+  if (fromRoom) return fromRoom;
+  const saved = readSession();
+  if (saved?.playerId === online.playerId && (saved.slot === "p1" || saved.slot === "p2")) return saved.slot;
+  return null;
+}
+
+function resolveOnlineSlot(room) {
+  if (!room) return null;
+  if (room.host_player_id === online.playerId) return "p1";
+  if (room.guest_player_id === online.playerId) return "p2";
+  const saved = readSession();
+  if (saved?.code === room.code && saved?.playerId === online.playerId && (saved.slot === "p1" || saved.slot === "p2")) {
+    return saved.slot;
+  }
+  return null;
+}
+
+function renderPlayerResolving() {
+  render(app, page("確認中", `
+    <div class="panel">
+      <h2>プレイヤー情報を確認中です</h2>
+      <p class="muted">この端末が1Pか2Pかを確認しています。数秒待っても変わらない場合は、ルームに入り直してください。</p>
+      ${onlineRoomNav()}
+    </div>
+  `));
+}
+
+function renderSecretWaiting() {
+  render(app, page("準備中", `
+    <div class="panel">
+      <h2>あなたのカードを準備中です</h2>
+      <p class="muted">少し待つと自分の役職確認画面に進みます。相手のカード情報はこの端末には表示されません。</p>
+      ${onlineRoomNav()}
+    </div>
+  `));
 }
