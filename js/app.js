@@ -14,6 +14,8 @@ const state = {
   game: null,
   selectedRoleIds: defaultRoleIds(),
   offlineStep: { player: "p1", revealOpen: false, roleSeen: false },
+  onlineRevealConfirmed: false,
+  lastRoundNumber: 0,
   onlineSlot: null,
   onlinePresence: [],
   currentSecret: null
@@ -34,6 +36,8 @@ const routes = {
   finalChoice: renderFinalChoice,
   result: renderResult
 };
+
+const PREPARE_STATUS = "prepare";
 
 online.onChange((event) => {
   if (event.type === "presence") {
@@ -160,6 +164,8 @@ function goHome() {
   state.game = null;
   state.onlineSlot = null;
   state.currentSecret = null;
+  state.onlineRevealConfirmed = false;
+  state.lastRoundNumber = 0;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
   setScreen("home");
 }
@@ -422,7 +428,9 @@ async function startSelectedRoles() {
   }
   state.game.selectedRoleIds = state.selectedRoleIds;
   state.game = startNextRound(state.game);
-  await publishOnlineRound("reveal");
+  state.onlineRevealConfirmed = false;
+  state.lastRoundNumber = state.game.round.number;
+  await publishOnlineRound(PREPARE_STATUS);
   setScreen("reveal");
 }
 
@@ -430,6 +438,7 @@ async function confirmReveal() {
   if (state.mode === "offline" && !state.offlineStep.roleSeen) {
     throw new Error("先に長押しで自分の役職を確認してください。");
   }
+  if (state.mode === "online") state.onlineRevealConfirmed = true;
   state.offlineStep.revealOpen = false;
   setScreen("ability");
 }
@@ -449,7 +458,7 @@ async function finishAbility() {
     }
     return;
   }
-  await publishOnlineRound("ability");
+  await publishOnlineRound(PREPARE_STATUS);
   setScreen("ability");
 }
 
@@ -487,8 +496,10 @@ async function chooseFinal(choice) {
 async function nextRound() {
   if (state.mode === "online" && !isHost()) throw new Error("次のゲームを始められるのは1Pです。");
   state.game = startNextRound(state.game);
+  state.onlineRevealConfirmed = false;
+  state.lastRoundNumber = state.game.round.number;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
-  if (state.mode === "online") await publishOnlineRound("reveal");
+  if (state.mode === "online") await publishOnlineRound(PREPARE_STATUS);
   setScreen("reveal");
 }
 
@@ -501,11 +512,11 @@ async function publishOnlineRound(screen) {
     public_state: publicRoundState(state.game.round),
     scores: state.game.scores
   };
-  await online.updateRoom(roomPatch);
   await online.upsertSecret(state.onlineSlot, state.game.round.number, playerSecretState(state.game.round, state.onlineSlot));
   if (state.onlineSlot === "p1" && online.room?.guest_player_id) {
     await online.upsertSecret("p2", state.game.round.number, playerSecretState(state.game.round, "p2"), online.room.guest_player_id);
   }
+  await online.updateRoom(roomPatch);
 }
 
 function syncOnlineRoom(room) {
@@ -518,6 +529,10 @@ function syncOnlineRoom(room) {
     roundNumber: room.round_number || 0,
     round: hydrateRoomRound(room)
   };
+  if (state.game.round.number && state.lastRoundNumber !== state.game.round.number) {
+    state.lastRoundNumber = state.game.round.number;
+    state.onlineRevealConfirmed = Boolean(state.game.round.abilityDone?.[currentPlayerId()]);
+  }
   if (room.status && !["waiting", "ready"].includes(room.status)) {
     state.screen = localScreenForRoomStatus(room.status, state.game.round);
   }
@@ -568,18 +583,17 @@ function isOnlineSession() {
 }
 
 function isOnlineGameActive(status) {
-  return ["reveal", "ability", "discussion", "finalChoice", "result"].includes(status);
+  return [PREPARE_STATUS, "discussion", "finalChoice", "result"].includes(status);
 }
 
 function currentOnlineGameScreen() {
   const status = online.room?.status;
-  return isOnlineGameActive(status) ? status : "onlineCreate";
+  return isOnlineGameActive(status) ? localScreenForRoomStatus(status, state.game?.round || {}) : "onlineCreate";
 }
 
 function phaseName(status) {
   return {
-    reveal: "役職確認",
-    ability: "能力",
+    [PREPARE_STATUS]: "準備",
     discussion: "話し合い",
     finalChoice: "最終選択",
     result: "結果"
@@ -591,6 +605,10 @@ function isHost() {
 }
 
 function localScreenForRoomStatus(status, round) {
+  if (status === PREPARE_STATUS) {
+    if (round.abilityDone?.[currentPlayerId()]) return "ability";
+    return state.onlineRevealConfirmed ? "ability" : "reveal";
+  }
   if (status === "discussion" && (!round.abilityDone.p1 || !round.abilityDone.p2)) return "ability";
   return status;
 }

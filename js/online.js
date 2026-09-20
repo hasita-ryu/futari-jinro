@@ -27,7 +27,7 @@ export class OnlineGame {
     if (!hasSupabaseConfig()) {
       throw new Error("Supabase設定がまだ入っていません。READMEの手順でURLとanon keyを設定してください。");
     }
-    if (!this.client) this.client = createSupabaseClient();
+    if (!this.client) this.client = createSupabaseClient(this.playerId);
   }
 
   onChange(listener) {
@@ -137,7 +137,7 @@ export class OnlineGame {
     };
     const { error } = await this.client.from("player_secrets").upsert(row, { onConflict: "room_code,player_id,round_number" });
     if (error) throw friendlyError(error, "自分用のカード情報を保存できませんでした。");
-    this.secret = row;
+    if (targetPlayerId === this.playerId) this.secret = row;
     return row;
   }
 

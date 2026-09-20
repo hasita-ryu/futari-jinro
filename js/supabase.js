@@ -7,7 +7,7 @@ export function hasSupabaseConfig() {
   return Boolean(SUPABASE_CONFIG.url && SUPABASE_CONFIG.anonKey);
 }
 
-export function createSupabaseClient() {
+export function createSupabaseClient(playerId = localStorage.getItem("honobono_werewolf_player_id") || "") {
   if (!hasSupabaseConfig()) {
     throw new Error("SupabaseのURLとanon keyが未設定です。js/supabase.js を編集してください。");
   }
@@ -17,7 +17,7 @@ export function createSupabaseClient() {
   return window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey, {
     global: {
       headers: {
-        "x-player-id": localStorage.getItem("honobono_werewolf_player_id") || ""
+        "x-player-id": playerId
       }
     },
     auth: { persistSession: false },
