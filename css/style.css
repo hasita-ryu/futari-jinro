@@ -72,6 +72,7 @@ p, small, li { line-height: 1.7; }
 
 .panel { padding: 18px; display: grid; gap: 14px; }
 .actions { display: grid; gap: 12px; }
+.inline-actions { display: grid; gap: 10px; margin-top: 4px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 .btn {

@@ -118,6 +118,7 @@ async function handleAction(action) {
     "online-join-screen": () => setScreen("onlineJoin"),
     "room-lobby": () => setScreen("onlineCreate"),
     "resume-game": () => setScreen(currentOnlineGameScreen()),
+    "ability-screen": () => setScreen("ability"),
     "create-room": createOnlineRoom,
     "join-room": joinOnlineRoom,
     "copy-code": copyCode,
@@ -281,8 +282,9 @@ function renderReveal() {
       <h2>${escapeHtml(name)}だけが画面を見てください</h2>
       ${open && roleId ? roleCard(roleId, { showCamp: true }) : `<p class="muted">準備ができたら、自分だけで役職を開いてください。</p>`}
       ${revealControl}
+      ${onlineRoomNav()}
     </div>
-  `, onlineRoomFooter()));
+  `));
 }
 
 function renderAbility() {
@@ -299,8 +301,9 @@ function renderAbility() {
         ${roleCard(secret?.roleId, { showCamp: true })}
         ${revealedPeek(log)}
         ${onlineWaiting ? `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了すると話し合いへ進みます。</p>` : button("話し合いへ", "finish-ability", "primary")}
+        ${onlineRoomNav()}
       </div>
-    `, onlineRoomFooter()));
+    `));
     return;
   }
   const ability = role?.ability;
@@ -312,20 +315,24 @@ function renderAbility() {
       ${roleCard(secret?.roleId, { showCamp: true })}
       ${controls}
       ${button("能力を使う", "finish-ability", "primary")}
+      ${onlineRoomNav()}
     </div>
-  `, onlineRoomFooter()));
+  `));
 }
 
 function renderDiscussion() {
   const done = state.game.round.abilityDone;
+  const onlineIncomplete = isOnlineSession() && (!done.p1 || !done.p2);
   render(app, page("話し合い", `
     <div class="panel">
       <h2>話し合ってください</h2>
       <p>目安は3分です。オンラインでは通話や対面で会話してください。</p>
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
+      ${onlineIncomplete ? `<p class="muted">まだ全員の能力が終わっていません。終わっていない人は能力画面に戻ってください。</p>${button("能力画面へ戻る", "ability-screen", "primary")}` : ""}
       ${done.p1 && done.p2 ? button("最終選択へ", "start-final", "primary") : ""}
+      ${onlineRoomNav()}
     </div>
-  `, onlineRoomFooter()));
+  `));
 }
 
 function renderFinalChoice() {
@@ -338,8 +345,9 @@ function renderFinalChoice() {
       <h2>${own ? `あなたは「${choiceName(own)}」を選びました` : "どちらにしますか？"}</h2>
       ${own ? `<p class="muted">相手の選択を待っています。</p>` : `<div class="grid-2">${button("あくしゅ", "handshake", "primary")}${button("まもる", "protect")}</div>`}
       <p class="muted">相手: ${round.choices[otherId] ? "選択済み" : "未選択"}</p>
+      ${onlineRoomNav()}
     </div>
-  `, onlineRoomFooter()));
+  `));
   if (round.result) setTimeout(() => setScreen("result"), 150);
 }
 
@@ -353,8 +361,9 @@ function renderResult() {
       <div class="result-row"><strong>${playerLabel(game.names, "p1")}</strong>${roleCard(round.roles.p1, { showCamp: true })}<p>選択: ${choiceName(round.choices.p1)} → 判定: ${choiceName(round.effectiveChoices.p1)} / +${result.playerDelta.p1}点</p></div>
       <div class="result-row"><strong>${playerLabel(game.names, "p2")}</strong>${roleCard(round.roles.p2, { showCamp: true })}<p>選択: ${choiceName(round.choices.p2)} → 判定: ${choiceName(round.effectiveChoices.p2)} / +${result.playerDelta.p2}点</p></div>
       <p><strong>累計</strong> ${game.scores.p1} - ${game.scores.p2}</p>
+      ${onlineRoomNav()}
     </div>
-  `, `${button("次のゲーム", "next-round", "primary")} ${onlineRoomFooter()} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+  `, `${button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
 }
 
 async function createOnlineRoom() {
@@ -507,8 +516,12 @@ function getVisibleSecret(playerId) {
   };
 }
 
-function onlineRoomFooter() {
-  return state.mode === "online" ? button("ルーム画面へ", "room-lobby") : "";
+function onlineRoomNav() {
+  return isOnlineSession() ? `<div class="inline-actions">${button("ルーム画面へ", "room-lobby")}</div>` : "";
+}
+
+function isOnlineSession() {
+  return state.mode === "online" || Boolean(online.room);
 }
 
 function isOnlineGameActive(status) {
