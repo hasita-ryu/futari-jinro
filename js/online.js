@@ -31,6 +31,7 @@ export class OnlineGame {
   }
 
   async resetClientForFreshPlayer() {
+    await this.unsubscribe();
     await clearAnonymousSession(this.client);
     this.client = createSupabaseClient();
     this.playerId = "";
@@ -75,17 +76,13 @@ export class OnlineGame {
   }
 
   async joinRoom(code, playerName) {
-    await this.ensureReady();
     const cleanCode = normalizeCode(code);
     if (!/^\d{6}$/.test(cleanCode)) throw new Error("ルームコードは6桁の数字で入力してください。");
 
+    await this.resetClientForFreshPlayer();
     const { data: room, error } = await this.client.from("rooms").select("*").eq("code", cleanCode).maybeSingle();
     if (error) throw friendlyError(error, "部屋を探せませんでした。");
     if (!room) throw new Error("そのルームコードの部屋が見つかりません。");
-
-    if (room.host_player_id === this.playerId && !room.guest_player_id) {
-      await this.resetClientForFreshPlayer();
-    }
 
     if (room.host_player_id === this.playerId || room.guest_player_id === this.playerId) {
       const slot = room.host_player_id === this.playerId ? "p1" : "p2";
