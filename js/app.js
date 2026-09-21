@@ -532,10 +532,8 @@ async function finishAbility() {
     }
     return;
   }
-  const nextStatus = state.game.round.abilityDone.p1 && state.game.round.abilityDone.p2 ? "discussion" : PREPARE_STATUS;
-  if (nextStatus === "discussion") state.discussionUnlockAt = Date.now() + 6000;
-  await publishOnlineRound(nextStatus);
-  setScreen(localScreenForRoomStatus(nextStatus, state.game.round));
+  await publishOnlineRound(PREPARE_STATUS);
+  setScreen("ability");
 }
 
 async function startDiscussion() {
