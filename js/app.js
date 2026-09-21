@@ -16,6 +16,8 @@ const state = {
   offlineStep: { player: "p1", revealOpen: false, roleSeen: false },
   onlineRevealConfirmed: false,
   resultRolesRevealed: false,
+  pendingFinalChoice: null,
+  resultStep: "closed",
   discussionUnlockAt: 0,
   lastRoundNumber: 0,
   onlineSlot: null,
@@ -146,8 +148,11 @@ async function handleAction(action) {
     "finish-ability": finishAbility,
     "start-discussion": startDiscussion,
     "start-final": startFinalChoice,
-    handshake: () => chooseFinal(CHOICES.HANDSHAKE),
-    protect: () => chooseFinal(CHOICES.PROTECT),
+    handshake: () => selectFinalChoice(CHOICES.HANDSHAKE),
+    protect: () => selectFinalChoice(CHOICES.PROTECT),
+    "confirm-final": confirmFinalChoice,
+    "open-result": openResultCards,
+    "show-score": showScoreBoard,
     "next-round": nextRound,
     "leave-online": async () => {
       await resetToHome();
@@ -168,6 +173,8 @@ function goHome() {
   state.currentSecret = null;
   state.onlineRevealConfirmed = false;
   state.resultRolesRevealed = false;
+  state.pendingFinalChoice = null;
+  state.resultStep = "closed";
   state.discussionUnlockAt = 0;
   state.lastRoundNumber = 0;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
@@ -365,7 +372,7 @@ function renderDiscussion() {
   const done = state.game.round.abilityDone;
   const onlineIncomplete = isOnlineSession() && (!done.p1 || !done.p2);
   const locked = Date.now() < state.discussionUnlockAt;
-  const canHostAdvance = isHost() && !onlineIncomplete && !locked;
+  const canHostAdvance = (state.mode !== "online" || isHost()) && !onlineIncomplete && !locked;
   if (locked) setTimeout(paint, Math.min(1000, state.discussionUnlockAt - Date.now()));
   render(app, page("話し合い", `
     <div class="panel">
@@ -394,63 +401,96 @@ function renderFinalChoice() {
   const round = state.game.round;
   const own = round.choices[playerId];
   const otherId = playerId === "p1" ? "p2" : "p1";
-  render(app, page("最終選択", `
+  if (round.result) {
+    if (state.resultStep !== "revealed" && state.resultStep !== "score") state.resultStep = "closed";
+    setTimeout(() => setScreen("result"), 100);
+  }
+  const pending = own || state.pendingFinalChoice;
+  render(app, page("あくしゅの時間", `
     <div class="panel">
-      <h2>${own ? `あなたは「${choiceName(own)}」を選びました` : "どちらにしますか？"}</h2>
-      ${own ? `<p class="muted">相手の選択を待っています。</p>` : `<div class="grid-2">${button("あくしゅ", "handshake", "primary")}${button("まもる", "protect")}</div>`}
+      <h2>${own ? `あなたは「${choiceName(own)}」で確定しました` : "カードを選んでOKしてください"}</h2>
+      <p>相手と握手するか、自分をまもるかを決めましょう。</p>
+      <div class="final-choice-grid">
+        ${choiceCard(CHOICES.PROTECT, pending === CHOICES.PROTECT, own)}
+        ${choiceCard(CHOICES.HANDSHAKE, pending === CHOICES.HANDSHAKE, own)}
+      </div>
+      ${own
+        ? `<p class="muted">相手の選択を待っています。</p>`
+        : `<button class="btn primary mega-action" data-action="confirm-final" type="button" ${pending ? "" : "disabled"}>OK</button>`}
       <p class="muted">相手: ${round.choices[otherId] ? "選択済み" : "未選択"}</p>
       ${onlineRoomNav()}
     </div>
   `));
-  if (round.result) setTimeout(() => setScreen("result"), 150);
 }
 
 function renderResult() {
   const game = state.game;
   const round = game.round;
   const result = round.result;
-  if (!state.resultRolesRevealed) {
-    setTimeout(() => {
-      state.resultRolesRevealed = true;
-      paint();
-    }, 1000);
+  if (!result) return setScreen("finalChoice");
+  if (state.resultStep === "score") {
+    render(app, page("得点", `
+      <div class="score-ticket">
+        <h2>第${round.number}ゲーム終了</h2>
+        <div class="score-showdown">
+          <div>
+            <small>${escapeHtml(playerLabel(game.names, "p1"))}</small>
+            <strong>${game.scores.p1}</strong>
+            <span>ポイント</span>
+          </div>
+          <b>VS</b>
+          <div>
+            <small>${escapeHtml(playerLabel(game.names, "p2"))}</small>
+            <strong>${game.scores.p2}</strong>
+            <span>ポイント</span>
+          </div>
+        </div>
+        <p class="next-call">さあ次のゲームへ！</p>
+      </div>
+      ${onlineRoomNav()}
+    `, `${isOnlineSession() ? (isHost() ? button("次のゲーム", "next-round", "primary") : `<div class="panel"><p class="muted">1Pが次のゲームを開始します。</p></div>`) : button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+    return;
   }
+  const revealed = state.resultStep === "revealed";
   render(app, page("結果", `
     <div class="result-stage">
       <div class="result-title">
-        <span class="pill">ラウンド${round.number}</span>
-        <h2>${result.summary}</h2>
+        <span class="pill">第${round.number}ゲーム</span>
+        <h2>結果発表</h2>
       </div>
-      <div class="versus-result">
-        ${resultPlayerCard(game, round, result, "p1")}
-        ${resultPlayerCard(game, round, result, "p2")}
+      <div class="result-columns">
+        ${resultPlayerColumn(game, round, result, "p1", revealed)}
+        <div class="result-cross">×</div>
+        ${resultPlayerColumn(game, round, result, "p2", revealed)}
       </div>
-      <div class="score-board game-score">
-        <div><small>${escapeHtml(playerLabel(game.names, "p1"))}</small><strong>${game.scores.p1}</strong></div>
-        <span>累計</span>
-        <div><small>${escapeHtml(playerLabel(game.names, "p2"))}</small><strong>${game.scores.p2}</strong></div>
-      </div>
+      ${revealed ? `<div class="result-summary">${escapeHtml(result.summary)}</div>` : ""}
     </div>
     ${onlineRoomNav()}
-  `, `${isOnlineSession() ? (isHost() ? button("次のゲーム", "next-round", "primary") : `<div class="panel"><p class="muted">1Pが次のゲームを開始します。</p></div>`) : button("次のゲーム", "next-round", "primary")} ${button("ホームへ", state.mode === "online" ? "leave-online" : "home")}`));
+  `, revealed ? button("OK", "show-score", "primary mega-action") : button("OPEN", "open-result", "primary mega-action")));
 }
 
-function resultPlayerCard(game, round, result, playerId) {
-  const delta = result.playerDelta[playerId] || 0;
-  const roleMarkup = state.resultRolesRevealed
-    ? roleCard(round.roles[playerId], { showCamp: true })
-    : `<div class="role-card result-hidden-card"><div class="mini-character"></div><div><h3>?</h3><p>役職発表中...</p></div></div>`;
+function choiceCard(choice, selected, locked) {
   return `
-    <article class="result-row">
-      <div class="result-head">
-        <strong>${escapeHtml(playerLabel(game.names, playerId))}</strong>
-        <span class="score-delta">+${delta}</span>
+    <button class="choice-card ${choice} ${selected ? "selected" : ""}" data-action="${choice === CHOICES.HANDSHAKE ? "handshake" : "protect"}" type="button" ${locked ? "disabled" : ""}>
+      <span class="choice-art">${choice === CHOICES.HANDSHAKE ? "握" : "守"}</span>
+      <strong>${choiceName(choice)}</strong>
+    </button>
+  `;
+}
+
+function resultPlayerColumn(game, round, result, playerId, revealed) {
+  const delta = result.playerDelta[playerId] || 0;
+  return `
+    <article class="result-player">
+      <h3>${escapeHtml(playerLabel(game.names, playerId))}</h3>
+      <div class="action-reveal ${round.choices[playerId]}">
+        <span>${round.choices[playerId] === CHOICES.HANDSHAKE ? "握" : "守"}</span>
+        <strong>${choiceName(round.choices[playerId])}</strong>
       </div>
-      <div class="choice-strip">
-        <div><small>選択</small><strong>${choiceName(round.choices[playerId])}</strong></div>
-        <div><small>判定</small><strong>${choiceName(round.effectiveChoices[playerId])}</strong></div>
+      <div class="result-role-slot">
+        ${revealed ? roleCard(round.roles[playerId], { showCamp: true }) : `<div class="role-back"><span>?</span></div>`}
       </div>
-      ${roleMarkup}
+      ${revealed ? `<strong class="point-pop ${delta > 0 ? "win" : ""}">${delta}ポイント${delta > 0 ? "!" : ""}</strong>` : ""}
     </article>
   `;
 }
@@ -495,6 +535,8 @@ async function startSelectedRoles() {
     state.game = createInitialGame({ mode: "offline", names: { p1, p2 }, selectedRoleIds: state.selectedRoleIds });
     state.game = startNextRound(state.game);
     state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
+    state.pendingFinalChoice = null;
+    state.resultStep = "closed";
     setScreen("reveal");
     return;
   }
@@ -502,6 +544,8 @@ async function startSelectedRoles() {
   state.game = startNextRound(state.game);
   state.onlineRevealConfirmed = false;
   state.resultRolesRevealed = false;
+  state.pendingFinalChoice = null;
+  state.resultStep = "closed";
   state.lastRoundNumber = state.game.round.number;
   await publishOnlineRound(PREPARE_STATUS);
   setScreen("reveal");
@@ -553,22 +597,53 @@ async function startDiscussion() {
 
 async function startFinalChoice() {
   if (state.mode !== "online") {
+    state.offlineStep.player = "p1";
+    state.pendingFinalChoice = null;
     setScreen("finalChoice");
     return;
   }
   if (!isHost()) throw new Error("最終選択へ進めるのは1Pです。");
   await publishOnlineRound("finalChoice");
+  state.pendingFinalChoice = null;
   setScreen("finalChoice");
 }
 
-async function chooseFinal(choice) {
+function selectFinalChoice(choice) {
+  const playerId = currentPlayerId();
+  if (!playerId || state.game.round.choices[playerId]) return;
+  state.pendingFinalChoice = choice;
+  paint();
+}
+
+async function confirmFinalChoice() {
   const playerId = currentPlayerId();
   if (!playerId) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
+  const choice = state.pendingFinalChoice;
+  if (!choice) throw new Error("先にカードを選んでください。");
   state.game.round = setFinalChoice(state.game.round, playerId, choice);
+  state.pendingFinalChoice = null;
+  if (state.mode !== "online" && playerId === "p1") {
+    state.offlineStep.player = "p2";
+    setScreen("finalChoice");
+    return;
+  }
   if (state.game.round.choices.p1 && state.game.round.choices.p2) state.game = resolveResult(state.game);
-  if (state.game.round.result) state.resultRolesRevealed = false;
+  if (state.game.round.result) {
+    state.resultRolesRevealed = false;
+    state.resultStep = "closed";
+  }
   if (state.mode === "online") await publishOnlineRound(state.game.round.result ? "result" : "finalChoice");
   setScreen(state.game.round.result ? "result" : "finalChoice");
+}
+
+function openResultCards() {
+  state.resultStep = "revealed";
+  paint();
+}
+
+function showScoreBoard() {
+  state.resultStep = "score";
+  paint();
 }
 
 async function nextRound() {
@@ -576,6 +651,8 @@ async function nextRound() {
   state.game = startNextRound(state.game);
   state.onlineRevealConfirmed = false;
   state.resultRolesRevealed = false;
+  state.pendingFinalChoice = null;
+  state.resultStep = "closed";
   state.discussionUnlockAt = 0;
   state.lastRoundNumber = state.game.round.number;
   state.offlineStep = { player: "p1", revealOpen: false, roleSeen: false };
@@ -586,19 +663,61 @@ async function nextRound() {
 async function publishOnlineRound(screen) {
   const slot = getOnlineSlot();
   if (!slot) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
-  const roomPatch = {
-    status: screen,
-    round_number: state.game.round.number,
-    selected_role_ids: state.game.selectedRoleIds,
-    player_names: state.game.names,
-    public_state: publicRoundState(state.game.round),
-    scores: state.game.scores
-  };
-  await online.upsertSecret(slot, state.game.round.number, playerSecretState(state.game.round, slot));
-  if (slot === "p1" && online.room?.guest_player_id) {
-    await online.upsertSecret("p2", state.game.round.number, playerSecretState(state.game.round, "p2"), online.room.guest_player_id);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await mergeLatestOnlineRound();
+    let targetScreen = screen;
+    if (screen === "finalChoice" && state.game.round.choices.p1 && state.game.round.choices.p2 && !state.game.round.result) {
+      state.game = resolveResult(state.game);
+      state.resultRolesRevealed = false;
+      state.resultStep = "closed";
+      targetScreen = "result";
+    }
+    const expectedUpdatedAt = online.room?.updated_at || null;
+    const roomPatch = {
+      status: targetScreen,
+      round_number: state.game.round.number,
+      selected_role_ids: state.game.selectedRoleIds,
+      player_names: state.game.names,
+      public_state: publicRoundState(state.game.round),
+      scores: state.game.scores
+    };
+    await online.upsertSecret(slot, state.game.round.number, playerSecretState(state.game.round, slot));
+    if (slot === "p1" && online.room?.guest_player_id) {
+      await online.upsertSecret("p2", state.game.round.number, playerSecretState(state.game.round, "p2"), online.room.guest_player_id);
+    }
+    const updated = await online.updateRoom(roomPatch, expectedUpdatedAt);
+    if (updated) return;
   }
-  await online.updateRoom(roomPatch);
+  throw new Error("同時に操作がありました。もう一度ボタンを押してください。");
+}
+
+async function mergeLatestOnlineRound() {
+  if (state.mode !== "online" || !online.room?.code || !state.game?.round?.number) return;
+  const latest = await online.fetchRoom().catch(() => null);
+  if (!latest || latest.round_number !== state.game.round.number) return;
+  const remoteRound = hydrateRoomRound(latest);
+  const round = structuredClone(state.game.round);
+  ["p1", "p2"].forEach((playerId) => {
+    if (!round.abilityDone[playerId] && remoteRound.abilityDone?.[playerId]) {
+      round.abilityDone[playerId] = true;
+      round.abilityLog[playerId] = remoteRound.abilityLog?.[playerId] || [];
+    }
+    if (!round.choices[playerId] && remoteRound.choices?.[playerId]) {
+      round.choices[playerId] = remoteRound.choices[playerId];
+    }
+  });
+  if (!round.result && remoteRound.result) {
+    round.roles = remoteRound.roles;
+    round.table = remoteRound.table;
+    round.effectiveChoices = remoteRound.effectiveChoices;
+    round.effectiveCamps = remoteRound.effectiveCamps;
+    round.result = remoteRound.result;
+  }
+  state.game = {
+    ...state.game,
+    scores: latest.scores || state.game.scores,
+    round
+  };
 }
 
 function syncOnlineRoom(room) {
@@ -618,7 +737,10 @@ function syncOnlineRoom(room) {
     state.lastRoundNumber = state.game.round.number;
     state.onlineRevealConfirmed = Boolean(state.game.round.abilityDone?.[currentPlayerId()]);
     state.resultRolesRevealed = false;
+    state.pendingFinalChoice = null;
+    state.resultStep = "closed";
   }
+  if (room.status === "result" && state.resultStep !== "revealed" && state.resultStep !== "score") state.resultStep = "closed";
   if (room.status === "discussion" && !state.discussionUnlockAt) state.discussionUnlockAt = Date.now() + 6000;
   if (room.status && !["waiting", "ready"].includes(room.status)) {
     state.screen = localScreenForRoomStatus(room.status, state.game.round);

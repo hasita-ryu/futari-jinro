@@ -126,16 +126,26 @@ export class OnlineGame {
     return { room: data, slot: saved.slot };
   }
 
-  async updateRoom(patch) {
+  async updateRoom(patch, expectedUpdatedAt = null) {
     await this.ensureReady();
     if (!this.room?.code) throw new Error("部屋情報がありません。");
-    const { data, error } = await this.client
+    let query = this.client
       .from("rooms")
       .update({ ...patch, updated_at: new Date().toISOString() })
-      .eq("code", this.room.code)
-      .select()
-      .single();
+      .eq("code", this.room.code);
+    if (expectedUpdatedAt) query = query.eq("updated_at", expectedUpdatedAt);
+    const { data, error } = await query.select().maybeSingle();
     if (error) throw friendlyError(error, "部屋の情報を更新できませんでした。");
+    if (!data) return null;
+    this.room = data;
+    return data;
+  }
+
+  async fetchRoom() {
+    await this.ensureReady();
+    if (!this.room?.code) throw new Error("部屋情報がありません。");
+    const { data, error } = await this.client.from("rooms").select("*").eq("code", this.room.code).single();
+    if (error) throw friendlyError(error, "部屋の情報を取得できませんでした。");
     this.room = data;
     return data;
   }
