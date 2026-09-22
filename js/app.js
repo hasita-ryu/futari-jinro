@@ -840,7 +840,15 @@ function currentPlayerId() {
 
 function getVisibleSecret(playerId) {
   if (state.mode === "online") {
-    return state.currentSecret || null;
+    if (state.currentSecret?.roleId) return state.currentSecret;
+    const roleId = state.game?.round?.roles?.[playerId];
+    if (roleId) {
+      return {
+        roleId,
+        abilityLog: state.game.round.abilityLog?.[playerId] || []
+      };
+    }
+    return null;
   }
   return {
     roleId: state.game.round.roles[playerId],
