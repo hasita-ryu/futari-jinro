@@ -466,7 +466,17 @@ function renderResult() {
       ${revealed ? `<div class="result-summary">${escapeHtml(result.summary)}</div>` : ""}
     </div>
     ${onlineRoomNav()}
-  `, revealed ? button("OK", "show-score", "primary mega-action") : button("OPEN", "open-result", "primary mega-action")));
+  `, resultFooter(revealed)));
+}
+
+function resultFooter(revealed) {
+  if (state.mode !== "online") {
+    return revealed ? button("OK", "show-score", "primary mega-action") : button("OPEN", "open-result", "primary mega-action");
+  }
+  if (isHost()) {
+    return revealed ? button("OK", "show-score", "primary mega-action") : button("OPEN", "open-result", "primary mega-action");
+  }
+  return `<div class="panel"><p class="muted">${revealed ? "1Pが得点画面へ進めます。" : "1PがOPENします。"}</p></div>`;
 }
 
 function choiceCard(choice, selected, locked) {
@@ -636,12 +646,26 @@ async function confirmFinalChoice() {
   setScreen(state.game.round.result ? "result" : "finalChoice");
 }
 
-function openResultCards() {
+async function openResultCards() {
+  if (state.mode === "online") {
+    if (!isHost()) throw new Error("OPENできるのは1Pです。");
+    state.resultStep = "revealed";
+    await publishOnlineRound("resultOpen");
+    setScreen("result");
+    return;
+  }
   state.resultStep = "revealed";
   paint();
 }
 
-function showScoreBoard() {
+async function showScoreBoard() {
+  if (state.mode === "online") {
+    if (!isHost()) throw new Error("得点画面へ進めるのは1Pです。");
+    state.resultStep = "score";
+    await publishOnlineRound("score");
+    setScreen("result");
+    return;
+  }
   state.resultStep = "score";
   paint();
 }
@@ -740,7 +764,9 @@ function syncOnlineRoom(room) {
     state.pendingFinalChoice = null;
     state.resultStep = "closed";
   }
-  if (room.status === "result" && state.resultStep !== "revealed" && state.resultStep !== "score") state.resultStep = "closed";
+  if (room.status === "result") state.resultStep = "closed";
+  if (room.status === "resultOpen") state.resultStep = "revealed";
+  if (room.status === "score") state.resultStep = "score";
   if (room.status === "discussion" && !state.discussionUnlockAt) state.discussionUnlockAt = Date.now() + 6000;
   if (room.status && !["waiting", "ready"].includes(room.status)) {
     state.screen = localScreenForRoomStatus(room.status, state.game.round);
@@ -792,7 +818,7 @@ function isOnlineSession() {
 }
 
 function isOnlineGameActive(status) {
-  return [PREPARE_STATUS, "discussion", "finalChoice", "result"].includes(status);
+  return [PREPARE_STATUS, "discussion", "finalChoice", "result", "resultOpen", "score"].includes(status);
 }
 
 function currentOnlineGameScreen() {
@@ -805,7 +831,9 @@ function phaseName(status) {
     [PREPARE_STATUS]: "準備",
     discussion: "話し合い",
     finalChoice: "最終選択",
-    result: "結果"
+    result: "結果",
+    resultOpen: "結果発表",
+    score: "得点"
   }[status] || "待機中";
 }
 
@@ -819,6 +847,7 @@ function localScreenForRoomStatus(status, round) {
     return state.onlineRevealConfirmed ? "ability" : "reveal";
   }
   if (status === "discussion" && (!round.abilityDone.p1 || !round.abilityDone.p2)) return "ability";
+  if (status === "resultOpen" || status === "score") return "result";
   return status;
 }
 
