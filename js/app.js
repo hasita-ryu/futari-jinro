@@ -7,6 +7,7 @@ import { button, choiceName, escapeHtml, holdRevealButton, page, playerLabel, re
 const app = document.querySelector("#app");
 const online = new OnlineGame();
 let holdRevealActive = false;
+let secretRetryTimer = null;
 
 const state = {
   mode: null,
@@ -175,6 +176,10 @@ function setScreen(screen) {
 }
 
 function goHome() {
+  if (secretRetryTimer) {
+    clearTimeout(secretRetryTimer);
+    secretRetryTimer = null;
+  }
   state.mode = null;
   state.game = null;
   state.onlineSlot = null;
@@ -916,6 +921,7 @@ function renderPlayerResolving() {
 }
 
 function renderSecretWaiting() {
+  scheduleSecretRetry();
   render(app, page("準備中", `
     <div class="panel">
       <h2>あなたのカードを準備中です</h2>
@@ -923,4 +929,18 @@ function renderSecretWaiting() {
       ${onlineRoomNav()}
     </div>
   `));
+}
+
+function scheduleSecretRetry() {
+  if (secretRetryTimer || state.mode !== "online" || !online.room?.code) return;
+  secretRetryTimer = setTimeout(async () => {
+    secretRetryTimer = null;
+    const secret = await online.fetchSecret().catch(() => null);
+    if (secret?.secret_state) {
+      state.currentSecret = secret.secret_state;
+      paint();
+      return;
+    }
+    if (state.screen === "reveal" || state.screen === "ability") paint();
+  }, 1000);
 }
