@@ -109,7 +109,15 @@ window.addEventListener("load", async () => {
 });
 
 function paint() {
+  document.body.dataset.scene = sceneForScreen(state.screen);
   (routes[state.screen] || renderHome)();
+}
+
+function sceneForScreen(screen) {
+  if (screen === "reveal" || screen === "ability") return "night";
+  if (screen === "discussion" || screen === "finalChoice") return "day";
+  if (screen === "result") return state.resultStep === "score" ? "morning" : "day";
+  return "morning";
 }
 
 async function handleAction(action) {
@@ -480,9 +488,10 @@ function resultFooter(revealed) {
 }
 
 function choiceCard(choice, selected, locked) {
+  const action = choice === CHOICES.HANDSHAKE ? "handshake" : "protect";
   return `
-    <button class="choice-card ${choice} ${selected ? "selected" : ""}" data-action="${choice === CHOICES.HANDSHAKE ? "handshake" : "protect"}" type="button" ${locked ? "disabled" : ""}>
-      <span class="choice-art">${choice === CHOICES.HANDSHAKE ? "握" : "守"}</span>
+    <button class="choice-card ${choice} ${selected ? "selected" : ""}" data-action="${action}" type="button" ${locked ? "disabled" : ""}>
+      <span class="choice-art"><img src="assets/actions/${action}.png" alt="${choiceName(choice)}"></span>
       <strong>${choiceName(choice)}</strong>
     </button>
   `;
@@ -494,7 +503,7 @@ function resultPlayerColumn(game, round, result, playerId, revealed) {
     <article class="result-player">
       <h3>${escapeHtml(playerLabel(game.names, playerId))}</h3>
       <div class="action-reveal ${round.choices[playerId]}">
-        <span>${round.choices[playerId] === CHOICES.HANDSHAKE ? "握" : "守"}</span>
+        <span><img src="assets/actions/${round.choices[playerId] === CHOICES.HANDSHAKE ? "handshake" : "protect"}.png" alt="${choiceName(round.choices[playerId])}"></span>
         <strong>${choiceName(round.choices[playerId])}</strong>
       </div>
       <div class="result-role-slot">

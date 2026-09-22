@@ -39,8 +39,11 @@ export function roleCard(roleId, options = {}) {
   if (!role) return `<article class="role-card"><h3>不明な役職</h3></article>`;
   return `
     <article class="role-card" style="--role-color:${role.color}">
-      <div class="mini-character ${role.icon}"></div>
-      <div>
+      <div class="role-art">
+        <img src="assets/roles/${role.id}.png" alt="${escapeHtml(role.name)}">
+        <strong class="role-art-label">${escapeHtml(role.name)}</strong>
+      </div>
+      <div class="role-info">
         <h3>${role.name}</h3>
         <p>${role.ability.text}</p>
         ${options.showCamp ? `<span class="pill">${role.camp === "werewolf" ? "人狼陣営" : "村人陣営"}</span>` : ""}

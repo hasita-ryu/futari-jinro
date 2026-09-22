@@ -1,4 +1,4 @@
-const CACHE_NAME = "honobono-werewolf-v20";
+const CACHE_NAME = "honobono-werewolf-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,23 @@ const ASSETS = [
   "./js/supabase.js",
   "./js/ui.js",
   "./manifest.json",
+  "./assets/backgrounds/morning.png",
+  "./assets/backgrounds/day.png",
+  "./assets/backgrounds/night.png",
+  "./assets/actions/handshake.png",
+  "./assets/actions/protect.png",
+  "./assets/roles/villager.png",
+  "./assets/roles/seer.png",
+  "./assets/roles/seer_apprentice.png",
+  "./assets/roles/wizard.png",
+  "./assets/roles/witch_apprentice.png",
+  "./assets/roles/wolf_boy.png",
+  "./assets/roles/wolf_man.png",
+  "./assets/roles/werewolf.png",
+  "./assets/roles/werewolf_senpai.png",
+  "./assets/roles/werewolf_boss.png",
+  "./assets/roles/werewolf_magician.png",
+  "./assets/roles/werewolf_wizard.png",
   "./assets/icons/icon-192.svg",
   "./assets/icons/icon-512.svg"
 ];
