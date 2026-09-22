@@ -1,8 +1,8 @@
 import { CHOICES, createInitialGame, publicRoundState, resolveAbility, resolveResult, setFinalChoice, startNextRound, playerSecretState } from "./game.js";
-import { defaultRoleIds, getRole, ROLE_DEFINITIONS, roleName } from "./roles.js";
+import { defaultRoleIds, getRole, ROLE_DEFINITIONS } from "./roles.js";
 import { OnlineGame, normalizeCode, readSession } from "./online.js";
 import { hasSupabaseConfig } from "./supabase.js";
-import { button, choiceName, escapeHtml, holdRevealButton, page, playerLabel, revealedPeek, render, roleCard, roleToggleList, smallButton, tablePicker, toast } from "./ui.js";
+import { button, choiceName, escapeHtml, holdRevealButton, page, playerLabel, revealedPeek, render, roleCard, roleImage, roleToggleList, smallButton, tablePicker, toast } from "./ui.js";
 
 const app = document.querySelector("#app");
 const online = new OnlineGame();
@@ -155,6 +155,7 @@ async function handleAction(action) {
     "start-selected-roles": startSelectedRoles,
     "confirm-reveal": confirmReveal,
     "finish-ability": finishAbility,
+    "confirm-ability-result": confirmAbilityResult,
     "start-discussion": startDiscussion,
     "start-final": startFinalChoice,
     handshake: () => selectFinalChoice(CHOICES.HANDSHAKE),
@@ -258,7 +259,7 @@ function renderOnlineHome() {
 function renderOnlineCreate() {
   if (!state.game && !online.room) {
     render(app, page("部屋を作る", `
-      <div class="panel">
+      <div class="panel ability-panel">
         <label>あなたの名前<input id="hostName" type="text" value="プレイヤー1"></label>
         <p class="muted">役職は次の画面で選びます。</p>
         ${button("ルームコードを発行", "create-room", "primary")}
@@ -271,7 +272,7 @@ function renderOnlineCreate() {
   const inGame = isOnlineGameActive(room?.status);
   const host = isHost();
   render(app, page("ルーム", `
-    <div class="panel">
+    <div class="panel ability-panel">
       <p>このコードを相手に伝えてください。</p>
       <strong class="code">${room?.code || "------"}</strong>
       ${smallButton("コピー", "copy-code")}
@@ -353,14 +354,15 @@ function renderAbility() {
     const abilityDoneAction = state.mode === "online"
       ? allOnlineDone
         ? isHost()
-          ? button("話し合いへ進む", "start-discussion", "primary")
+          ? button("確認して話し合いへ進む", "start-discussion", "primary")
           : `<h2>1Pを待っています</h2><p class="muted">2人とも能力は完了しました。1Pが話し合いへ進めます。</p>`
         : `<h2>相手の準備を待っています</h2><p class="muted">あなたのカード確認と能力は完了しました。相手も完了するまで待ちます。</p>`
-      : button("完了", "finish-ability", "primary");
+      : button("確認した", "confirm-ability-result", "primary");
     render(app, page("能力結果", `
-      <div class="panel">
-        ${roleCard(secret?.roleId, { showCamp: true })}
+      <div class="panel ability-panel">
+        <h2>見たカードを確認</h2>
         ${revealedPeek(log)}
+        <p class="muted">結果を見終わってから、話し合いへ進んでください。</p>
         ${abilityDoneAction}
         ${onlineRoomNav()}
       </div>
@@ -368,11 +370,11 @@ function renderAbility() {
     return;
   }
   const ability = role?.ability;
-  let controls = `<p>${ability?.text || "能力はありません。"}</p>`;
+  let controls = "";
   if (ability?.type === "peek_table") controls += tablePicker(round, ability.count);
   if (ability?.type === "swap_self_table") controls += tablePicker(round, 1) + smallButton("入れ替えない", "finish-ability");
   render(app, page("能力", `
-    <div class="panel">
+    <div class="panel ability-panel">
       ${roleCard(secret?.roleId, { showCamp: true })}
       ${controls}
       ${button("能力を使う", "finish-ability", "primary")}
@@ -394,7 +396,7 @@ function renderDiscussion() {
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
       <div class="used-card-strip">
         <strong>このラウンドのカード</strong>
-        <div>${usedRoundCards(state.game.round).map((id) => `<span>${roleName(id)}</span>`).join("")}</div>
+        <div>${usedRoundCards(state.game.round).map((id) => roleImage(id, "used-role-art")).join("")}</div>
       </div>
       ${onlineIncomplete ? `<p class="muted">まだ全員の能力が終わっていません。終わっていない人は能力画面に戻ってください。</p>${button("能力画面へ戻る", "ability-screen", "primary")}` : ""}
       ${isHost() && !onlineIncomplete && locked ? `<button class="btn primary" type="button" disabled>少し話してから進む</button>` : ""}
@@ -496,8 +498,10 @@ function choiceCard(choice, selected, locked) {
   const action = choice === CHOICES.HANDSHAKE ? "handshake" : "protect";
   return `
     <button class="choice-card ${choice} ${selected ? "selected" : ""}" data-action="${action}" type="button" ${locked ? "disabled" : ""}>
-      <span class="choice-art"><img src="assets/actions/${action}.png" alt="${choiceName(choice)}"></span>
-      <strong>${choiceName(choice)}</strong>
+      <span class="choice-art">
+        <img src="assets/actions/${action}.png" alt="${choiceName(choice)}">
+        <strong class="action-label">${choiceName(choice)}</strong>
+      </span>
     </button>
   `;
 }
@@ -508,8 +512,10 @@ function resultPlayerColumn(game, round, result, playerId, revealed) {
     <article class="result-player">
       <h3>${escapeHtml(playerLabel(game.names, playerId))}</h3>
       <div class="action-reveal ${round.choices[playerId]}">
-        <span><img src="assets/actions/${round.choices[playerId] === CHOICES.HANDSHAKE ? "handshake" : "protect"}.png" alt="${choiceName(round.choices[playerId])}"></span>
-        <strong>${choiceName(round.choices[playerId])}</strong>
+        <span>
+          <img src="assets/actions/${round.choices[playerId] === CHOICES.HANDSHAKE ? "handshake" : "protect"}.png" alt="${choiceName(round.choices[playerId])}">
+          <strong class="action-label">${choiceName(round.choices[playerId])}</strong>
+        </span>
       </div>
       <div class="result-role-slot">
         ${revealed ? roleCard(round.roles[playerId], { showCamp: true }) : `<div class="role-back"><span>?</span></div>`}
@@ -596,16 +602,25 @@ async function finishAbility() {
     state.game.round = resolveAbility(state.game.round, playerId, { indexes, index: indexes[0] });
   }
   if (state.mode === "offline") {
-    if (playerId === "p1") {
-      state.offlineStep = { player: "p2", revealOpen: false, roleSeen: false };
-      setScreen("reveal");
-    } else {
-      setScreen("discussion");
-    }
+    setScreen("ability");
     return;
   }
   await publishOnlineRound(PREPARE_STATUS);
   setScreen("ability");
+}
+
+function confirmAbilityResult() {
+  const playerId = currentPlayerId();
+  if (state.mode !== "offline") {
+    setScreen("ability");
+    return;
+  }
+  if (playerId === "p1") {
+    state.offlineStep = { player: "p2", revealOpen: false, roleSeen: false };
+    setScreen("reveal");
+    return;
+  }
+  setScreen("discussion");
 }
 
 async function startDiscussion() {

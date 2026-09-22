@@ -153,6 +153,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   position: relative;
   width: min(100%, 138px);
   justify-self: center;
+  line-height: 0;
 }
 
 .role-art img {
@@ -164,14 +165,23 @@ input[type="text"], input[type="number"], input[type="tel"] {
 
 .role-art-label {
   position: absolute;
-  left: 11%;
-  right: 11%;
-  bottom: 7.5%;
+  left: 18%;
+  right: 18%;
+  bottom: 6.4%;
   text-align: center;
-  font-size: clamp(0.72rem, 3vw, 0.98rem);
-  line-height: 1;
+  min-height: 11.8%;
+  display: grid;
+  place-items: center;
+  font-size: clamp(0.54rem, 2.2vw, 0.82rem);
+  line-height: 0.92;
   color: #5a321e;
   overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.role-art-label.role-name-long {
+  font-size: clamp(0.44rem, 1.9vw, 0.68rem);
+  line-height: 0.82;
 }
 
 .role-info {
@@ -193,6 +203,16 @@ input[type="text"], input[type="number"], input[type="tel"] {
   width: min(66vw, 230px);
 }
 
+.panel > .role-card .role-art-label {
+  font-size: clamp(1.02rem, 4.6vw, 1.42rem);
+  line-height: 0.95;
+}
+
+.panel > .role-card .role-art-label.role-name-long {
+  font-size: clamp(0.78rem, 3.5vw, 1.04rem);
+  line-height: 0.85;
+}
+
 .panel > .role-card .role-info {
   border: 3px solid var(--ink);
   border-radius: 18px;
@@ -200,15 +220,52 @@ input[type="text"], input[type="number"], input[type="tel"] {
   padding: 12px;
 }
 
+.ability-panel > .role-card .role-art {
+  width: min(40vw, 145px);
+}
+
+.ability-panel > .role-card .role-art-label {
+  font-size: clamp(0.86rem, 3.8vw, 1.18rem);
+}
+
+.ability-panel > .role-card .role-info {
+  font-size: 0.78rem;
+  padding: 8px;
+  line-height: 1.45;
+}
+
+.ability-panel {
+  gap: 10px;
+}
+
+.ability-panel .btn.primary[data-action="finish-ability"] {
+  position: sticky;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 3;
+}
+
 .toggle-card {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(78px, 0.28fr) 1fr;
   gap: 12px;
+  align-items: center;
   padding: 13px;
   background: linear-gradient(90deg, var(--role-color), #fffdf2 64%);
+  cursor: pointer;
 }
 .toggle-card input { width: 24px; height: 24px; accent-color: var(--orange); }
 .toggle-card span { display: grid; gap: 4px; }
+.toggle-role-art {
+  width: min(100%, 92px);
+}
+.toggle-role-art .role-art-label {
+  font-size: clamp(0.5rem, 2.4vw, 0.74rem);
+  line-height: 0.9;
+}
+.toggle-role-art .role-art-label.role-name-long {
+  font-size: clamp(0.36rem, 1.9vw, 0.54rem);
+  line-height: 0.78;
+}
 
 .mini-character {
   width: 62px;
@@ -235,17 +292,87 @@ input[type="text"], input[type="number"], input[type="tel"] {
 .mini-character.ear::before { box-shadow: -15px -24px 0 5px #f2b884, 34px -24px 0 5px #f2b884; }
 .mini-character.moon { box-shadow: inset -14px 0 0 #d7c2f3; }
 
-.table-cards { display: grid; gap: 10px; }
-.field-card span {
+.table-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.field-card {
+  position: relative;
   display: block;
-  border: 3px dashed var(--ink);
-  border-radius: 16px;
-  padding: 16px;
-  background: #fffdf2;
+  cursor: pointer;
+}
+.field-card span {
+  display: grid;
+  gap: 6px;
+  place-items: center;
+  text-align: center;
+  border: 4px solid var(--ink);
+  border-radius: 18px 15px 20px 16px;
+  padding: 10px 6px;
+  background: #2ebfc0;
+  font-weight: 800;
+  box-shadow: 4px 5px 0 var(--shadow);
+}
+.field-card i {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 4px solid var(--ink);
+  border-radius: 50%;
+  background: var(--yellow);
+  color: var(--ink);
+  font-size: 2rem;
+  font-style: normal;
+  font-weight: 900;
+}
+.field-card b {
+  font-size: clamp(0.78rem, 3.4vw, 1rem);
+  line-height: 1.2;
+}
+.field-card small {
+  color: var(--muted);
   font-weight: 800;
 }
 .field-card input { position: absolute; opacity: 0; }
-.field-card input:checked + span { background: var(--yellow); }
+.field-card input:checked + span {
+  outline: 6px solid #ff6f5f;
+  outline-offset: 2px;
+  background: #54d7d7;
+}
+
+.peek-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 12px;
+}
+
+.peek-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 18px;
+  background: rgba(255, 253, 242, 0.82);
+}
+
+.peek-card small {
+  font-weight: 900;
+  color: var(--muted);
+}
+
+.peek-role-art {
+  width: min(100%, 132px);
+}
+
+.peek-role-art .role-art-label {
+  font-size: clamp(0.62rem, 2.8vw, 0.88rem);
+}
+
+.peek-role-art .role-art-label.role-name-long {
+  font-size: clamp(0.46rem, 2vw, 0.64rem);
+}
 
 .used-card-strip {
   display: grid;
@@ -256,17 +383,20 @@ input[type="text"], input[type="number"], input[type="tel"] {
   padding: 12px;
 }
 .used-card-strip > div {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
+  align-items: start;
 }
-.used-card-strip span {
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  background: var(--yellow);
-  padding: 5px 9px;
-  font-weight: 800;
-  font-size: 0.86rem;
+.used-role-art {
+  width: 100%;
+}
+.used-role-art .role-art-label {
+  font-size: clamp(0.34rem, 1.6vw, 0.55rem);
+  line-height: 0.85;
+}
+.used-role-art .role-art-label.role-name-long {
+  font-size: clamp(0.26rem, 1.2vw, 0.42rem);
 }
 
 .mega-action {
@@ -291,10 +421,8 @@ input[type="text"], input[type="number"], input[type="tel"] {
   color: var(--ink);
   box-shadow: none;
   display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: 6px;
-  padding: 0;
+  place-items: center;
+  padding: 5px;
   cursor: pointer;
   font: inherit;
   font-weight: 900;
@@ -305,7 +433,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
 .choice-card:disabled { cursor: default; opacity: 0.8; }
 .choice-card.selected {
   outline: 7px solid #ff6f5f;
-  outline-offset: -2px;
+  outline-offset: -1px;
   transform: translateY(-3px);
 }
 .choice-art {
@@ -323,11 +451,20 @@ input[type="text"], input[type="number"], input[type="tel"] {
   height: auto;
   display: block;
 }
-.choice-card strong {
-  margin-top: -54px;
-  z-index: 1;
-  font-size: clamp(1.25rem, 7vw, 2rem);
+.action-label {
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  bottom: 5.8%;
+  min-height: 10.8%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  font-size: clamp(1.1rem, 6.2vw, 1.9rem);
+  line-height: 1;
   color: #5a321e;
+  font-weight: 900;
+  overflow-wrap: anywhere;
 }
 
 .result-stage {
@@ -374,6 +511,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 2px;
 }
 .action-reveal span {
+  position: relative;
   display: block;
   width: min(100%, 160px);
   filter: drop-shadow(3px 5px 0 rgba(95, 70, 49, 0.18));
@@ -383,11 +521,8 @@ input[type="text"], input[type="number"], input[type="tel"] {
   width: 100%;
   height: auto;
 }
-.action-reveal strong {
-  font-size: clamp(1.25rem, 6vw, 2rem);
-  margin-top: -44px;
-  z-index: 1;
-  color: #5a321e;
+.action-reveal .action-label {
+  font-size: clamp(0.92rem, 4.2vw, 1.3rem);
 }
 .result-cross {
   color: #8b2f25;
@@ -412,6 +547,10 @@ input[type="text"], input[type="number"], input[type="tel"] {
 }
 .result-role-slot .role-card .role-art {
   width: min(100%, 122px);
+}
+.result-role-slot .role-card .role-art-label {
+  font-size: clamp(0.5rem, 2.3vw, 0.72rem);
+  line-height: 0.9;
 }
 .result-role-slot .role-card .role-info {
   display: none;
@@ -624,6 +763,14 @@ input[type="text"], input[type="number"], input[type="tel"] {
 
 @media (max-width: 430px) {
   .app-shell { padding-inline: 12px; }
+  .toggle-card {
+    grid-template-columns: auto minmax(70px, 86px) 1fr;
+    gap: 9px;
+    padding: 10px;
+  }
+  .toggle-card small { font-size: 0.78rem; line-height: 1.45; }
+  .used-card-strip > div { grid-template-columns: repeat(5, minmax(52px, 1fr)); gap: 5px; }
+  .used-role-art .role-art-label { font-size: 0.42rem; }
   .choice-card { min-height: 0; }
   .action-reveal { min-height: 0; }
   .result-role-slot, .role-back, .result-role-slot .role-card { min-height: 132px; }
