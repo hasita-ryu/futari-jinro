@@ -582,7 +582,11 @@ async function confirmReveal() {
 async function finishAbility() {
   const playerId = currentPlayerId();
   if (!playerId) throw new Error("プレイヤー情報を確認中です。少し待ってからもう一度お試しください。");
-  const indexes = [...document.querySelectorAll('input[name="tableIndex"]:checked')].map((input) => Number(input.value));
+  let indexes = [...document.querySelectorAll('input[name="tableIndex"]:checked')].map((input) => Number(input.value));
+  const role = getRole(state.game.round.roles[playerId]);
+  if (!indexes.length && role?.ability?.type === "peek_table") {
+    indexes = state.game.round.table.slice(0, role.ability.count).map((card) => card.index);
+  }
   if (!state.game.round.abilityDone[playerId]) {
     state.game.round = resolveAbility(state.game.round, playerId, { indexes, index: indexes[0] });
   }
@@ -721,6 +725,27 @@ async function publishOnlineRound(screen) {
     const updated = await online.updateRoom(roomPatch, expectedUpdatedAt);
     if (updated) return;
   }
+  await mergeLatestOnlineRound();
+  let targetScreen = screen;
+  if (screen === "finalChoice" && state.game.round.choices.p1 && state.game.round.choices.p2 && !state.game.round.result) {
+    state.game = resolveResult(state.game);
+    state.resultRolesRevealed = false;
+    state.resultStep = "closed";
+    targetScreen = "result";
+  }
+  await online.upsertSecret(slot, state.game.round.number, playerSecretState(state.game.round, slot));
+  if (slot === "p1" && online.room?.guest_player_id) {
+    await online.upsertSecret("p2", state.game.round.number, playerSecretState(state.game.round, "p2"), online.room.guest_player_id);
+  }
+  const updated = await online.updateRoom({
+    status: targetScreen,
+    round_number: state.game.round.number,
+    selected_role_ids: state.game.selectedRoleIds,
+    player_names: state.game.names,
+    public_state: publicRoundState(state.game.round),
+    scores: state.game.scores
+  });
+  if (updated) return;
   throw new Error("同時に操作がありました。もう一度ボタンを押してください。");
 }
 
