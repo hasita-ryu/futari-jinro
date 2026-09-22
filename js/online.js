@@ -202,9 +202,14 @@ export class OnlineGame {
 
     this.presenceChannel = this.client.channel(`presence:${code}`, { config: { presence: { key: this.playerId } } });
     this.presenceChannel
-      .on("presence", { event: "sync" }, () => {
+      .on("presence", { event: "sync" }, async () => {
         const state = this.presenceChannel.presenceState();
         this.emit({ type: "presence", onlineIds: Object.keys(state) });
+        const latestRoom = await this.fetchRoom().catch(() => null);
+        if (latestRoom) {
+          await this.fetchSecret().catch(() => null);
+          this.emit({ type: "room", room: latestRoom, secret: this.secret });
+        }
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
