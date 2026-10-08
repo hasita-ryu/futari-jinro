@@ -1,11 +1,11 @@
 {
-  "name": "ふたりのほのぼの人狼",
-  "short_name": "ふたり人狼",
-  "description": "スマホ2台または1台で遊べる、2人専用の人狼ゲームです。",
+  "name": "TRUST DUEL",
+  "short_name": "TRUST DUEL",
+  "description": "2人で情報を読み合う、短時間の心理カードゲームです。",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#fbf6df",
-  "theme_color": "#f6eecf",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
   "icons": [
     {
       "src": "assets/icons/icon-192.svg",

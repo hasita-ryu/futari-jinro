@@ -46,17 +46,17 @@ export function calculateRoundScore(round) {
       result.playerDelta.p1 += SCORE_RULES.handshakeSameCamp;
       result.playerDelta.p2 += SCORE_RULES.handshakeSameCamp;
       result.winners = ["p1", "p2"];
-      result.summary = "同じ陣営であくしゅ成功。ふたりとも仲良く得点です。";
+      result.summary = "同じ所属で協定成立。両者にボーナスが入ります。";
     } else {
       players.forEach((playerId) => {
         const camp = round.effectiveCamps[playerId];
         result.playerDelta[playerId] += SCORE_RULES.handshakeDifferentCamp[camp];
       });
       result.winners = players.filter((playerId) => round.effectiveCamps[playerId] === CAMPS.WEREWOLF);
-      result.summary = "違う陣営であくしゅ。人狼陣営がうまく近づきました。";
+      result.summary = "違う所属で協定成立。シャドウ側が主導権を取りました。";
     }
   } else if (p1Choice === "protect" && p2Choice === "protect") {
-    result.summary = "ふたりともまもる。慎重な夜になりました。";
+    result.summary = "両者とも警戒。大きな変化はありません。";
   } else {
     players.forEach((playerId) => {
       const otherId = playerId === "p1" ? "p2" : "p1";
@@ -68,8 +68,8 @@ export function calculateRoundScore(round) {
       }
     });
     result.summary = result.winners.length
-      ? "疑いが当たりました。まもったプレイヤーに得点です。"
-      : "疑いは空振り。今回は大きな動きなしです。";
+      ? "読みが的中しました。警戒を選んだ側にボーナスが入ります。"
+      : "読みは外れました。今回は大きな変化なしです。";
   }
 
   players.forEach((playerId) => {
@@ -81,7 +81,7 @@ export function calculateRoundScore(round) {
       round.effectiveCamps[otherId] === CAMPS.WEREWOLF
     ) {
       result.playerDelta[playerId] += SCORE_RULES.wolfBoyHandshakeWithWolf;
-      result.summary += " 狼少年は人狼とのあくしゅで追加点をもらいました。";
+      result.summary += " 境界者はシャドウ側との協定成立で追加点を得ました。";
     }
 
     const role = getRole(round.roles[playerId]);

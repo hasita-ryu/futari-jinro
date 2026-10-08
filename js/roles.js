@@ -6,142 +6,142 @@ export const CAMPS = {
 export const ROLE_DEFINITIONS = [
   {
     id: "villager",
-    name: "村人",
+    name: "市民",
     camp: CAMPS.VILLAGE,
-    color: "#c9e8d2",
-    icon: "seed",
+    color: "#38BDF8",
+    icon: "circle",
     ability: {
       type: "none",
-      text: "特殊能力はありません。相手の言葉をよく聞いて、最後の選択を決めましょう。"
+      text: "特殊効果はありません。相手の発言を読み、最後の判断を決めます。"
     }
   },
   {
     id: "seer",
-    name: "占い師",
+    name: "観測者",
     camp: CAMPS.VILLAGE,
-    color: "#bfe7f5",
-    icon: "star",
+    color: "#22D3EE",
+    icon: "eye",
     ability: {
       type: "peek_table",
       count: 2,
-      text: "場に残った3枚から2枚を見ることができます。"
+      text: "伏せられた3枚から2枚を確認できます。"
     }
   },
   {
     id: "seer_apprentice",
-    name: "占い師の弟子",
+    name: "観測補佐",
     camp: CAMPS.VILLAGE,
-    color: "#d7ecff",
+    color: "#7DD3FC",
     icon: "dot",
     ability: {
       type: "peek_table",
       count: 1,
-      text: "場に残った3枚から1枚を見ることができます。"
+      text: "伏せられた3枚から1枚を確認できます。"
     }
   },
   {
     id: "wizard",
-    name: "魔法使い",
+    name: "交換師",
     camp: CAMPS.VILLAGE,
-    color: "#f7d7ef",
-    icon: "wand",
+    color: "#A78BFA",
+    icon: "swap",
     ability: {
       type: "swap_self_table",
-      text: "自分のカードと場のカード1枚を入れ替えられます。入れ替えないこともできます。"
+      text: "自分のカードと伏せ札1枚を入れ替えられます。入れ替えないこともできます。"
     }
   },
   {
     id: "witch_apprentice",
-    name: "見習い魔女",
+    name: "反転師",
     camp: CAMPS.VILLAGE,
-    color: "#ead9ff",
-    icon: "moon",
+    color: "#818CF8",
+    icon: "flip",
     ability: {
       type: "flip_opponent_camp",
-      text: "相手の陣営を村人陣営と人狼陣営の間で変化させます。"
+      text: "相手の所属判定をライト側とシャドウ側の間で反転させます。"
     }
   },
   {
     id: "wolf_boy",
-    name: "狼少年",
+    name: "境界者",
     camp: CAMPS.VILLAGE,
-    color: "#f8e3a2",
-    icon: "ear",
+    color: "#F59E0B",
+    icon: "edge",
     tags: ["wolf_friendly"],
     ability: {
       type: "none",
-      text: "特殊能力はありません。人狼側との「あくしゅ」で特別に加点されます。"
+      text: "特殊効果はありません。シャドウ側との協定成立で追加点を得ます。"
     }
   },
   {
     id: "wolf_man",
-    name: "狼男",
+    name: "変質者",
     camp: CAMPS.VILLAGE,
-    color: "#f3c6a2",
-    icon: "ear",
+    color: "#FB923C",
+    icon: "shift",
     tags: ["turns_wolf_if_wolf_in_table"],
     ability: {
       type: "passive",
-      text: "場に人狼系カードが残っていると、判定時に人狼陣営になります。"
+      text: "伏せ札にシャドウ系カードがあると、判定時にシャドウ側になります。"
     }
   },
   {
     id: "werewolf",
-    name: "人狼",
+    name: "潜伏者",
     camp: CAMPS.WEREWOLF,
-    color: "#f4b4b1",
-    icon: "fang",
+    color: "#F43F5E",
+    icon: "mask",
     ability: {
       type: "peek_table",
       count: 1,
-      text: "場に残った3枚から1枚を見ることができます。"
+      text: "伏せられた3枚から1枚を確認できます。"
     }
   },
   {
     id: "werewolf_senpai",
-    name: "人狼先輩",
+    name: "上級潜伏者",
     camp: CAMPS.WEREWOLF,
-    color: "#f0aaa7",
-    icon: "fang",
+    color: "#E11D48",
+    icon: "mask",
     ability: {
       type: "peek_table",
       count: 2,
-      text: "場に残った3枚から2枚を見ることができます。"
+      text: "伏せられた3枚から2枚を確認できます。"
     }
   },
   {
     id: "werewolf_boss",
-    name: "人狼親方",
+    name: "首謀者",
     camp: CAMPS.WEREWOLF,
-    color: "#e9958f",
-    icon: "fang",
+    color: "#BE123C",
+    icon: "crown",
     tags: ["high_risk"],
     ability: {
       type: "peek_table",
       count: 3,
-      text: "場に残った3枚すべてを見ることができます。ただし負けた時の失点が大きくなります。"
+      text: "伏せられた3枚すべてを確認できます。ただし失敗時の減点が大きくなります。"
     }
   },
   {
     id: "werewolf_magician",
-    name: "人狼マジシャン",
+    name: "幻術師",
     camp: CAMPS.WEREWOLF,
-    color: "#d7c2f3",
-    icon: "wand",
+    color: "#C084FC",
+    icon: "mirror",
     ability: {
       type: "reverse_opponent_choice",
-      text: "相手の最終選択を「あくしゅ」と「まもる」で反転させます。"
+      text: "相手の最終判断を「協定」と「警戒」で反転させます。"
     }
   },
   {
     id: "werewolf_wizard",
-    name: "人狼魔法使い",
+    name: "霧術師",
     camp: CAMPS.WEREWOLF,
-    color: "#c7b4e8",
-    icon: "moon",
+    color: "#64748B",
+    icon: "fog",
     ability: {
       type: "cloud_table_peek",
-      text: "カードを見る能力に干渉します。相手が場を見る時、1枚だけ「もやもや」として隠します。"
+      text: "相手の確認能力に干渉します。伏せ札の一部を読みづらくします。"
     }
   }
 ];
@@ -151,7 +151,7 @@ export function getRole(roleId) {
 }
 
 export function roleName(roleId) {
-  return getRole(roleId)?.name || "不明な役職";
+  return getRole(roleId)?.name || "不明なカード";
 }
 
 export function isWerewolfRole(roleId) {
