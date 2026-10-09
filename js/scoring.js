@@ -81,7 +81,7 @@ export function calculateRoundScore(round) {
       round.effectiveCamps[otherId] === CAMPS.WEREWOLF
     ) {
       result.playerDelta[playerId] += SCORE_RULES.wolfBoyHandshakeWithWolf;
-      result.summary += " なかよし係は、くろチームとのなかよし成立で追加点を得ました。";
+      result.summary += " 子人狼は、くろチームとのなかよし成立で追加点を得ました。";
     }
 
     const role = getRole(round.roles[playerId]);

@@ -1,4 +1,4 @@
-const CACHE_NAME = "futari-onenight-v28";
+const CACHE_NAME = "futari-onenight-v29";
 const ASSETS = [
   "./",
   "./index.html",

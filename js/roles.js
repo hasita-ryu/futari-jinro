@@ -6,7 +6,7 @@ export const CAMPS = {
 export const ROLE_DEFINITIONS = [
   {
     id: "villager",
-    name: "しろびと",
+    name: "村人",
     camp: CAMPS.VILLAGE,
     color: "#38BDF8",
     icon: "circle",
@@ -17,7 +17,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "seer",
-    name: "みはり",
+    name: "占い師",
     camp: CAMPS.VILLAGE,
     color: "#22D3EE",
     icon: "eye",
@@ -29,7 +29,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "seer_apprentice",
-    name: "みならい",
+    name: "見習い占い師",
     camp: CAMPS.VILLAGE,
     color: "#7DD3FC",
     icon: "dot",
@@ -41,7 +41,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "wizard",
-    name: "いれかえ係",
+    name: "魔法使い",
     camp: CAMPS.VILLAGE,
     color: "#A78BFA",
     icon: "swap",
@@ -52,7 +52,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "witch_apprentice",
-    name: "反転係",
+    name: "見習い魔女",
     camp: CAMPS.VILLAGE,
     color: "#818CF8",
     icon: "flip",
@@ -63,7 +63,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "wolf_boy",
-    name: "なかよし係",
+    name: "子人狼",
     camp: CAMPS.VILLAGE,
     color: "#F59E0B",
     icon: "edge",
@@ -75,7 +75,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "wolf_man",
-    name: "かわりもの",
+    name: "人狼男",
     camp: CAMPS.VILLAGE,
     color: "#FB923C",
     icon: "shift",
@@ -87,7 +87,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "werewolf",
-    name: "おおかみ",
+    name: "人狼",
     camp: CAMPS.WEREWOLF,
     color: "#F43F5E",
     icon: "mask",
@@ -99,7 +99,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "werewolf_senpai",
-    name: "先輩おおかみ",
+    name: "先輩人狼",
     camp: CAMPS.WEREWOLF,
     color: "#E11D48",
     icon: "mask",
@@ -111,7 +111,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "werewolf_boss",
-    name: "ボスおおかみ",
+    name: "キング人狼",
     camp: CAMPS.WEREWOLF,
     color: "#BE123C",
     icon: "crown",
@@ -124,7 +124,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "werewolf_magician",
-    name: "まどわし",
+    name: "人狼マジシャン",
     camp: CAMPS.WEREWOLF,
     color: "#C084FC",
     icon: "mirror",
@@ -135,7 +135,7 @@ export const ROLE_DEFINITIONS = [
   },
   {
     id: "werewolf_wizard",
-    name: "きりかけ",
+    name: "人狼魔法使い",
     camp: CAMPS.WEREWOLF,
     color: "#64748B",
     icon: "fog",
