@@ -1,16 +1,16 @@
 :root {
-  --paper: #0f172a;
-  --ink: #e5eefb;
-  --muted: #94a3b8;
-  --blue: #0ea5e9;
-  --yellow: #facc15;
-  --green: #14b8a6;
-  --orange: #f97316;
-  --pink: #e11d48;
-  --white: #f8fafc;
-  --panel: rgba(15, 23, 42, 0.86);
-  --line: rgba(148, 163, 184, 0.34);
-  --shadow: rgba(2, 6, 23, 0.42);
+  --paper: #f4f2ec;
+  --ink: #2a2725;
+  --muted: #746f68;
+  --blue: #5d93b8;
+  --yellow: #f3cf73;
+  --green: #83b48d;
+  --orange: #d9955e;
+  --pink: #d9828f;
+  --white: #fffdf8;
+  --panel: rgba(255, 253, 248, 0.9);
+  --line: rgba(79, 70, 62, 0.18);
+  --shadow: rgba(48, 43, 35, 0.16);
 }
 
 * { box-sizing: border-box; }
@@ -23,19 +23,24 @@ body {
   font-family: "Public Sans", "Inter", "Yu Gothic", system-ui, sans-serif;
   letter-spacing: 0;
   background:
-    radial-gradient(circle at 20% 0%, rgba(14, 165, 233, 0.24), transparent 32%),
-    radial-gradient(circle at 90% 18%, rgba(225, 29, 72, 0.18), transparent 30%),
-    linear-gradient(155deg, #020617 0%, #0f172a 44%, #111827 100%);
+    radial-gradient(circle at 14% 0%, rgba(131, 180, 141, 0.24), transparent 32%),
+    radial-gradient(circle at 88% 12%, rgba(217, 149, 94, 0.18), transparent 30%),
+    linear-gradient(155deg, #fbfaf6 0%, #f4f2ec 52%, #ece7dd 100%);
   background-attachment: fixed;
 }
 
 body[data-scene="morning"],
 body[data-scene="day"],
-body[data-scene="night"] { background-image: none; }
+body[data-scene="night"] {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(93, 147, 184, 0.22), transparent 34%),
+    radial-gradient(circle at 92% 16%, rgba(217, 130, 143, 0.16), transparent 32%),
+    linear-gradient(155deg, #f8f7f3 0%, #f0ede6 54%, #e8e4da 100%);
+}
 
 body[data-scene="night"] {
-  --ink: #e5eefb;
-  --shadow: rgba(2, 6, 23, 0.5);
+  --ink: #2a2725;
+  --shadow: rgba(48, 43, 35, 0.18);
 }
 
 .paper-texture {
@@ -44,9 +49,9 @@ body[data-scene="night"] {
   pointer-events: none;
   opacity: 0.08;
   background-image:
-    linear-gradient(90deg, rgba(226, 232, 240, 0.18) 1px, transparent 1px),
-    linear-gradient(rgba(226, 232, 240, 0.14) 1px, transparent 1px);
-  background-size: 24px 24px;
+    linear-gradient(90deg, rgba(42, 39, 37, 0.14) 1px, transparent 1px),
+    linear-gradient(rgba(42, 39, 37, 0.11) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 .app-shell {
@@ -68,11 +73,11 @@ body[data-scene="night"] {
 .badge, .pill {
   display: inline-flex;
   width: fit-content;
-  border: 1px solid rgba(125, 211, 252, 0.5);
+  border: 1px solid rgba(79, 70, 62, 0.22);
   border-radius: 999px;
   padding: 5px 11px;
-  background: rgba(14, 165, 233, 0.14);
-  color: #bae6fd;
+  background: rgba(255, 253, 248, 0.82);
+  color: #5a5048;
   font-weight: 700;
   font-size: 0.84rem;
   letter-spacing: 0.08em;
@@ -87,10 +92,10 @@ p, small, li { line-height: 1.7; }
 
 .panel, .role-card, .toggle-card, .result-row {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--panel);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 18px 50px var(--shadow);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 42px var(--shadow);
 }
 
 .panel { padding: 18px; display: grid; gap: 14px; }
@@ -100,20 +105,20 @@ p, small, li { line-height: 1.7; }
 
 .btn {
   appearance: none;
-  border: 1px solid rgba(125, 211, 252, 0.42);
-  border-radius: 12px;
+  border: 1px solid rgba(79, 70, 62, 0.2);
+  border-radius: 16px;
   padding: 16px 18px;
   min-height: 56px;
-  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(20, 184, 166, 0.14));
+  background: linear-gradient(135deg, #fffdf8, #efe9dd);
   color: var(--ink);
   font: inherit;
   font-weight: 800;
-  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.32);
+  box-shadow: 0 10px 24px var(--shadow);
   cursor: pointer;
 }
-.btn:nth-child(2n) { background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(15, 23, 42, 0.4)); border-radius: 12px; }
-.btn:nth-child(3n) { background: linear-gradient(135deg, rgba(225, 29, 72, 0.2), rgba(15, 23, 42, 0.4)); }
-.btn.primary { background: linear-gradient(135deg, #0369a1, #0f766e); border-color: rgba(186, 230, 253, 0.8); }
+.btn:nth-child(2n) { background: linear-gradient(135deg, #f7f4ec, #e8ecdf); border-radius: 16px; }
+.btn:nth-child(3n) { background: linear-gradient(135deg, #f8f0e8, #eee4dc); }
+.btn.primary { background: linear-gradient(135deg, #ffe6a7, #f1b96e); border-color: rgba(79, 70, 62, 0.34); }
 .btn.small { min-height: 42px; padding: 10px 12px; font-size: 0.92rem; }
 .btn.hold {
   min-height: 76px;
@@ -128,7 +133,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(2, 6, 23, 0.54);
+  background: rgba(255, 253, 248, 0.88);
   padding: 14px 13px;
   color: var(--ink);
   font: inherit;
@@ -141,8 +146,8 @@ input[type="text"], input[type="number"], input[type="tel"] {
   font-size: clamp(2.8rem, 15vw, 5rem);
   font-weight: 900;
   letter-spacing: 0.08em;
-  background: rgba(2, 6, 23, 0.58);
-  border: 1px dashed rgba(125, 211, 252, 0.58);
+  background: rgba(255, 253, 248, 0.9);
+  border: 1px dashed rgba(79, 70, 62, 0.32);
   border-radius: 14px;
   padding: 14px 8px;
 }
@@ -154,7 +159,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 14px;
   align-items: center;
   padding: 14px;
-  background: rgba(255, 253, 242, 0.9);
+  background: rgba(255, 253, 248, 0.9);
 }
 
 .role-art {
@@ -165,37 +170,26 @@ input[type="text"], input[type="number"], input[type="tel"] {
   line-height: 0;
   display: grid;
   place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(226, 232, 240, 0.45);
-  border-radius: 16px;
-  background:
-    linear-gradient(160deg, color-mix(in srgb, var(--role-color), #ffffff 12%), color-mix(in srgb, var(--role-color), #020617 52%)),
-    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.18), transparent 32%);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08), 0 16px 28px rgba(2,6,23,0.35);
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .role-art img {
-  display: none;
+  display: block;
   width: 100%;
   height: auto;
-  filter: drop-shadow(3px 5px 0 rgba(95, 70, 49, 0.18));
+  filter: drop-shadow(0 12px 18px rgba(48, 43, 35, 0.16));
 }
 
 .role-art::before {
-  content: "";
-  position: absolute;
-  inset: 9px;
-  border: 1px solid rgba(248, 250, 252, 0.52);
-  border-radius: 12px;
+  content: none;
 }
 
 .role-art::after {
-  content: "";
-  position: absolute;
-  inset: 20% 18% 31%;
-  border-radius: 999px;
-  background: rgba(2, 6, 23, 0.28);
-  filter: blur(18px);
+  content: none;
 }
 
 .role-sigil {
@@ -283,32 +277,18 @@ input[type="text"], input[type="number"], input[type="tel"] {
 }
 
 .panel > .role-card .role-art {
-  width: min(66vw, 230px);
-}
-
-.panel > .role-card .role-art-label {
-  font-size: clamp(1.02rem, 4.6vw, 1.42rem);
-  line-height: 0.95;
-}
-
-.panel > .role-card .role-art-label.role-name-long {
-  font-size: clamp(0.78rem, 3.5vw, 1.04rem);
-  line-height: 0.85;
+  width: min(70vw, 250px);
 }
 
 .panel > .role-card .role-info {
   border: 1px solid var(--line);
   border-radius: 14px;
-  background: rgba(2, 6, 23, 0.42);
+  background: rgba(255, 253, 248, 0.86);
   padding: 12px;
 }
 
 .ability-panel > .role-card .role-art {
-  width: min(40vw, 145px);
-}
-
-.ability-panel > .role-card .role-art-label {
-  font-size: clamp(0.86rem, 3.8vw, 1.18rem);
+  width: min(44vw, 164px);
 }
 
 .ability-panel > .role-card .role-info {
@@ -333,21 +313,13 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 12px;
   align-items: center;
   padding: 13px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--role-color), #020617 35%), rgba(15, 23, 42, 0.86) 64%);
+  background: rgba(255, 253, 248, 0.88);
   cursor: pointer;
 }
-.toggle-card input { width: 24px; height: 24px; accent-color: var(--orange); }
+.toggle-card input { width: 24px; height: 24px; accent-color: #d9955e; }
 .toggle-card span { display: grid; gap: 4px; }
 .toggle-role-art {
   width: min(100%, 92px);
-}
-.toggle-role-art .role-art-label {
-  font-size: clamp(0.5rem, 2.4vw, 0.74rem);
-  line-height: 0.9;
-}
-.toggle-role-art .role-art-label.role-name-long {
-  font-size: clamp(0.36rem, 1.9vw, 0.54rem);
-  line-height: 0.78;
 }
 
 .mini-character {
@@ -390,21 +362,21 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 6px;
   place-items: center;
   text-align: center;
-  border: 1px solid rgba(125, 211, 252, 0.5);
+  border: 1px solid rgba(79, 70, 62, 0.22);
   border-radius: 14px;
   padding: 10px 6px;
-  background: rgba(14, 165, 233, 0.18);
+  background: rgba(255, 253, 248, 0.82);
   font-weight: 800;
-  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.28);
+  box-shadow: 0 10px 24px var(--shadow);
 }
 .field-card i {
   display: grid;
   place-items: center;
   width: 56px;
   height: 56px;
-  border: 1px solid rgba(248, 250, 252, 0.5);
+  border: 1px solid rgba(79, 70, 62, 0.24);
   border-radius: 50%;
-  background: rgba(250, 204, 21, 0.14);
+  background: rgba(243, 207, 115, 0.22);
   color: var(--ink);
   font-size: 2rem;
   font-style: normal;
@@ -420,9 +392,9 @@ input[type="text"], input[type="number"], input[type="tel"] {
 }
 .field-card input { position: absolute; opacity: 0; }
 .field-card input:checked + span {
-  outline: 3px solid #38bdf8;
+  outline: 3px solid #d9955e;
   outline-offset: 2px;
-  background: rgba(14, 165, 233, 0.34);
+  background: rgba(255, 230, 167, 0.42);
 }
 
 .peek-results {
@@ -437,7 +409,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 8px;
   padding: 10px;
   border-radius: 14px;
-  background: rgba(2, 6, 23, 0.42);
+  background: rgba(255, 253, 248, 0.82);
   border: 1px solid var(--line);
 }
 
@@ -450,20 +422,12 @@ input[type="text"], input[type="number"], input[type="tel"] {
   width: min(100%, 132px);
 }
 
-.peek-role-art .role-art-label {
-  font-size: clamp(0.62rem, 2.8vw, 0.88rem);
-}
-
-.peek-role-art .role-art-label.role-name-long {
-  font-size: clamp(0.46rem, 2vw, 0.64rem);
-}
-
 .used-card-strip {
   display: grid;
   gap: 8px;
-  border: 1px dashed rgba(125, 211, 252, 0.42);
+  border: 1px dashed rgba(79, 70, 62, 0.24);
   border-radius: 14px;
-  background: rgba(2, 6, 23, 0.4);
+  background: rgba(255, 253, 248, 0.72);
   padding: 12px;
 }
 .used-card-strip > div {
@@ -474,13 +438,6 @@ input[type="text"], input[type="number"], input[type="tel"] {
 }
 .used-role-art {
   width: 100%;
-}
-.used-role-art .role-art-label {
-  font-size: clamp(0.34rem, 1.6vw, 0.55rem);
-  line-height: 0.85;
-}
-.used-role-art .role-art-label.role-name-long {
-  font-size: clamp(0.26rem, 1.2vw, 0.42rem);
 }
 
 .mega-action {
@@ -500,7 +457,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   appearance: none;
   min-height: 0;
   border: 0;
-  border-radius: 30px;
+  border-radius: 18px;
   background: transparent;
   color: var(--ink);
   box-shadow: none;
@@ -516,8 +473,8 @@ input[type="text"], input[type="number"], input[type="tel"] {
 .choice-card:hover { transform: translateY(-2px); }
 .choice-card:disabled { cursor: default; opacity: 0.8; }
 .choice-card.selected {
-  outline: 3px solid #38bdf8;
-  outline-offset: -1px;
+  outline: 4px solid #d9955e;
+  outline-offset: 2px;
   transform: translateY(-3px);
 }
 .choice-art {
@@ -525,39 +482,29 @@ input[type="text"], input[type="number"], input[type="tel"] {
   display: grid;
   place-items: center;
   width: 100%;
-  min-height: clamp(150px, 38vw, 250px);
-  border: 1px solid rgba(226, 232, 240, 0.36);
-  border-radius: 18px;
-  overflow: hidden;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
   line-height: 1;
   filter: none;
-  background:
-    radial-gradient(circle at 50% 28%, rgba(248, 250, 252, 0.16), transparent 32%),
-    linear-gradient(155deg, rgba(14, 165, 233, 0.32), rgba(15, 23, 42, 0.94));
-  box-shadow: 0 18px 36px rgba(2, 6, 23, 0.36);
+  background: transparent;
+  box-shadow: none;
 }
 .choice-art.action-protect {
-  background:
-    radial-gradient(circle at 50% 28%, rgba(248, 250, 252, 0.16), transparent 32%),
-    linear-gradient(155deg, rgba(225, 29, 72, 0.32), rgba(15, 23, 42, 0.94));
+  background: transparent;
 }
 .choice-art img {
-  display: none;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 20px rgba(48, 43, 35, 0.18));
 }
 .choice-art::before {
-  content: "";
-  position: absolute;
-  inset: 11px;
-  border: 1px solid rgba(248, 250, 252, 0.32);
-  border-radius: 13px;
+  content: none;
 }
 .choice-art::after {
-  content: "";
-  width: 48%;
-  aspect-ratio: 1;
-  border: 3px solid rgba(248, 250, 252, 0.78);
-  border-radius: 50%;
-  background: rgba(2, 6, 23, 0.3);
+  content: none;
 }
 .choice-art.action-handshake::after {
   border-radius: 28%;
@@ -566,31 +513,6 @@ input[type="text"], input[type="number"], input[type="tel"] {
 .choice-art.action-protect::after {
   border-radius: 50% 50% 46% 46%;
   clip-path: polygon(50% 0, 95% 18%, 82% 82%, 50% 100%, 18% 82%, 5% 18%);
-}
-.action-mark {
-  position: absolute;
-  z-index: 1;
-  top: 18px;
-  left: 18px;
-  color: rgba(248, 250, 252, 0.74);
-  font-size: clamp(0.72rem, 2.8vw, 0.96rem);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-}
-.action-label {
-  position: absolute;
-  left: 15%;
-  right: 15%;
-  bottom: 10%;
-  min-height: 10.8%;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  font-size: clamp(1.1rem, 6.2vw, 1.9rem);
-  line-height: 1;
-  color: #f8fafc;
-  font-weight: 900;
-  overflow-wrap: anywhere;
 }
 
 .result-stage {
@@ -646,10 +568,11 @@ input[type="text"], input[type="number"], input[type="tel"] {
   font-size: clamp(0.92rem, 4.2vw, 1.3rem);
 }
 .result-action-card {
-  min-height: 128px;
+  width: min(100%, 160px);
+  min-height: 0;
 }
 .result-cross {
-  color: #8b2f25;
+  color: #7b4635;
   font-size: clamp(2.4rem, 11vw, 4rem);
   font-weight: 900;
 }
@@ -670,21 +593,17 @@ input[type="text"], input[type="number"], input[type="tel"] {
   min-height: 150px;
 }
 .result-role-slot .role-card .role-art {
-  width: min(100%, 122px);
-}
-.result-role-slot .role-card .role-art-label {
-  font-size: clamp(0.5rem, 2.3vw, 0.72rem);
-  line-height: 0.9;
+  width: min(100%, 128px);
 }
 .result-role-slot .role-card .role-info {
   display: none;
 }
 .role-back {
   min-height: 150px;
-  border: 5px solid var(--ink);
-  border-radius: 22px 18px 24px 20px;
-  background: #2ebfc0;
-  box-shadow: 4px 6px 0 var(--shadow);
+  border: 1px solid rgba(79, 70, 62, 0.18);
+  border-radius: 22px;
+  background: linear-gradient(145deg, #fffdf8, #e8ecdf);
+  box-shadow: 0 12px 24px var(--shadow);
   display: grid;
   place-items: center;
 }
@@ -694,8 +613,8 @@ input[type="text"], input[type="number"], input[type="tel"] {
   width: 76px;
   height: 76px;
   border-radius: 50%;
-  background: var(--yellow);
-  border: 4px solid var(--ink);
+  background: rgba(243, 207, 115, 0.46);
+  border: 1px solid rgba(79, 70, 62, 0.2);
   font-size: 2.6rem;
   font-weight: 900;
 }
@@ -707,19 +626,19 @@ input[type="text"], input[type="number"], input[type="tel"] {
 }
 .point-pop.win { color: #f23535; }
 .result-summary {
-  border: 3px solid var(--ink);
+  border: 1px solid rgba(79, 70, 62, 0.18);
   border-radius: 18px;
-  background: var(--yellow);
+  background: rgba(255, 230, 167, 0.62);
   padding: 12px;
   text-align: center;
   font-weight: 900;
   font-size: 1.1rem;
 }
 .score-ticket {
-  border: 6px solid var(--ink);
-  border-radius: 28px 22px 30px 24px;
-  background: #fff8d6;
-  box-shadow: 6px 8px 0 var(--shadow);
+  border: 1px solid rgba(79, 70, 62, 0.18);
+  border-radius: 24px;
+  background: rgba(255, 253, 248, 0.92);
+  box-shadow: 0 18px 42px var(--shadow);
   padding: 22px 16px;
   display: grid;
   gap: 24px;
@@ -748,7 +667,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   color: #000;
 }
 .score-showdown b {
-  color: #8b2f25;
+  color: #7b4635;
   font-size: clamp(2.1rem, 10vw, 3.8rem);
 }
 .score-showdown span {
@@ -756,7 +675,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   font-size: 1.1rem;
 }
 .next-call {
-  color: #8b2f25;
+  color: #7b4635;
   font-size: clamp(1.7rem, 8vw, 2.8rem);
   font-weight: 900;
   line-height: 1.25;
@@ -774,7 +693,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   align-items: stretch;
 }
 .score-board > div {
-  border: 3px solid var(--ink);
+  border: 1px solid rgba(79, 70, 62, 0.18);
   border-radius: 14px;
   background: var(--white);
   padding: 12px;
@@ -815,7 +734,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   font-size: 0.95rem;
 }
 .score-delta {
-  border: 3px solid var(--ink);
+  border: 1px solid rgba(79, 70, 62, 0.18);
   border-radius: 16px;
   background: var(--orange);
   padding: 8px 6px;
@@ -831,7 +750,7 @@ input[type="text"], input[type="number"], input[type="tel"] {
   gap: 7px;
 }
 .choice-strip > div {
-  border: 2px dashed var(--ink);
+  border: 1px dashed rgba(79, 70, 62, 0.22);
   border-radius: 12px;
   background: #fffef8;
   padding: 8px;
@@ -872,11 +791,11 @@ input[type="text"], input[type="number"], input[type="tel"] {
   z-index: 10;
   margin: auto;
   width: min(520px, calc(100% - 32px));
-  border: 3px solid var(--ink);
+  border: 1px solid rgba(79, 70, 62, 0.2);
   border-radius: 16px;
   padding: 13px 15px;
-  background: #fff8d6;
-  box-shadow: 4px 5px 0 var(--shadow);
+  background: #fffdf8;
+  box-shadow: 0 14px 28px var(--shadow);
   font-weight: 800;
 }
 

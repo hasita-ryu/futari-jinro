@@ -25,7 +25,7 @@ export function page(title, body, footer = "") {
   return `
     <section class="page">
       <header class="top">
-        <div class="badge">2 PLAYER MIND CARD</div>
+        <div class="badge">2 PLAYER CARD GAME</div>
         <h1>${title}</h1>
       </header>
       ${body}
@@ -52,12 +52,9 @@ export function roleCard(roleId, options = {}) {
 export function roleImage(roleId, className = "") {
   const role = getRole(roleId);
   if (!role) return `<div class="role-art ${className}"><strong>不明</strong></div>`;
-  const nameClass = role.name.length >= 5 ? " role-name-long" : "";
   return `
     <div class="role-art ${className}" aria-label="${escapeHtml(role.name)}">
-      <span class="role-sigil role-${role.icon}" aria-hidden="true"></span>
-      <span class="role-code">${escapeHtml(role.id.split("_").map((part) => part[0]).join("").toUpperCase())}</span>
-      <strong class="role-art-label${nameClass}">${escapeHtml(role.name)}</strong>
+      <img src="assets/roles/${escapeHtml(role.id)}.png" alt="${escapeHtml(role.name)}" loading="lazy">
     </div>
   `;
 }
@@ -76,21 +73,20 @@ export function roleToggleList(selectedRoleIds) {
 }
 
 export function choiceName(choice) {
-  return choice === "handshake" ? "協定" : choice === "protect" ? "警戒" : "未選択";
+  return choice === "handshake" ? "なかよし" : choice === "protect" ? "ガード" : "未選択";
 }
 
 export function actionCard(choice, className = "") {
   const kind = choice === "handshake" ? "handshake" : "protect";
   return `
     <span class="choice-art action-${kind} ${className}">
-      <span class="action-mark" aria-hidden="true">${kind === "handshake" ? "LINK" : "GUARD"}</span>
-      <strong class="action-label">${choiceName(choice)}</strong>
+      <img src="assets/actions/${kind}.png" alt="${choiceName(choice)}" loading="lazy">
     </span>
   `;
 }
 
 function campName(camp) {
-  return camp === "werewolf" ? "シャドウ側" : "ライト側";
+  return camp === "werewolf" ? "くろチーム" : "しろチーム";
 }
 
 export function playerLabel(names, playerId) {

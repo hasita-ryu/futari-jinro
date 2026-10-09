@@ -1,4 +1,4 @@
-const CACHE_NAME = "trust-duel-v27";
+const CACHE_NAME = "futari-onenight-v28";
 const ASSETS = [
   "./",
   "./index.html",
@@ -12,7 +12,21 @@ const ASSETS = [
   "./js/ui.js",
   "./manifest.json",
   "./assets/icons/icon-192.svg",
-  "./assets/icons/icon-512.svg"
+  "./assets/icons/icon-512.svg",
+  "./assets/actions/handshake.png",
+  "./assets/actions/protect.png",
+  "./assets/roles/villager.png",
+  "./assets/roles/seer.png",
+  "./assets/roles/seer_apprentice.png",
+  "./assets/roles/wizard.png",
+  "./assets/roles/witch_apprentice.png",
+  "./assets/roles/wolf_boy.png",
+  "./assets/roles/wolf_man.png",
+  "./assets/roles/werewolf.png",
+  "./assets/roles/werewolf_senpai.png",
+  "./assets/roles/werewolf_boss.png",
+  "./assets/roles/werewolf_magician.png",
+  "./assets/roles/werewolf_wizard.png"
 ];
 
 self.addEventListener("install", (event) => {

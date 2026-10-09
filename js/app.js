@@ -204,9 +204,9 @@ async function resetToHome() {
 }
 
 function renderHome() {
-  render(app, page("TRUST DUEL", `
+  render(app, page("ふたりのワンナイト", `
     <div class="panel">
-      <p>2人で情報を読み合う、短時間の心理カードゲームです。相手と協定するか、警戒するかを最後に選びます。</p>
+      <p>2人で正体を読み合う、短時間のカードゲームです。最後に「なかよし」か「ガード」を選びます。</p>
       <div class="actions wide">
         ${button("オフラインで遊ぶ", "offline", "primary")}
         ${button("オンラインで遊ぶ", "online")}
@@ -221,10 +221,10 @@ function renderHowto() {
   render(app, page("ルール", `
     <div class="panel">
       <ol>
-        <li>5枚のカードから、2人に1枚ずつ、伏せ札に3枚が配られます。</li>
+        <li>5枚のカードから、2人に1枚ずつ、伏せカードに3枚が配られます。</li>
         <li>自分のカードだけを確認し、カード効果を使います。</li>
-        <li>会話で相手の所属を読み、最後に「協定」か「警戒」を選びます。</li>
-        <li>同じ側なら協定、違う側なら警戒が成功しやすくなります。</li>
+        <li>会話で相手のチームを読み、最後に「なかよし」か「ガード」を選びます。</li>
+        <li>同じチームならなかよし、違うチームならガードが成功しやすくなります。</li>
       </ol>
     </div>
   `, button("ホームへ", "home")));
@@ -391,7 +391,7 @@ function renderDiscussion() {
   if (locked) setTimeout(paint, Math.min(1000, state.discussionUnlockAt - Date.now()));
   render(app, page("相談フェーズ", `
     <div class="panel">
-      <h2>相手の所属を読んでください</h2>
+      <h2>相手のチームを読んでください</h2>
       <p>目安は3分です。オンラインでは通話や対面で会話してください。</p>
       <p class="muted">能力完了: ${done.p1 ? "P1 OK" : "P1 待ち"} / ${done.p2 ? "P2 OK" : "P2 待ち"}</p>
       <div class="used-card-strip">
@@ -424,7 +424,7 @@ function renderFinalChoice() {
   render(app, page("最終判断", `
     <div class="panel">
       <h2>${own ? `あなたは「${choiceName(own)}」で確定しました` : "カードを選んでOKしてください"}</h2>
-      <p>相手を信じて協定するか、距離を取って警戒するかを決めましょう。</p>
+      <p>相手を信じてなかよしするか、距離を取ってガードするかを決めましょう。</p>
       <div class="final-choice-grid">
         ${choiceCard(CHOICES.PROTECT, pending === CHOICES.PROTECT, own)}
         ${choiceCard(CHOICES.HANDSHAKE, pending === CHOICES.HANDSHAKE, own)}
@@ -486,10 +486,10 @@ function renderResult() {
 
 function resultFooter(revealed) {
   if (state.mode !== "online") {
-    return revealed ? button("OK", "show-score", "primary mega-action") : button("REVEAL", "open-result", "primary mega-action");
+    return revealed ? button("OK", "show-score", "primary mega-action") : button("めくる", "open-result", "primary mega-action");
   }
   if (isHost()) {
-    return revealed ? button("OK", "show-score", "primary mega-action") : button("REVEAL", "open-result", "primary mega-action");
+    return revealed ? button("OK", "show-score", "primary mega-action") : button("めくる", "open-result", "primary mega-action");
   }
   return `<div class="panel"><p class="muted">${revealed ? "1Pがスコア画面へ進めます。" : "1Pが判定を公開します。"}</p></div>`;
 }

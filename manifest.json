@@ -1,7 +1,7 @@
 {
-  "name": "TRUST DUEL",
-  "short_name": "TRUST DUEL",
-  "description": "2人で情報を読み合う、短時間の心理カードゲームです。",
+  "name": "ふたりのワンナイト",
+  "short_name": "ワンナイト",
+  "description": "2人で正体を読み合う、短時間のカードゲームです。",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0F172A",
