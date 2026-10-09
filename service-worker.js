@@ -1,4 +1,4 @@
-const CACHE_NAME = "futari-onenight-v29";
+const CACHE_NAME = "futari-onenight-v30";
 const ASSETS = [
   "./",
   "./index.html",
@@ -13,6 +13,7 @@ const ASSETS = [
   "./manifest.json",
   "./assets/icons/icon-192.svg",
   "./assets/icons/icon-512.svg",
+  "./assets/backgrounds/parchment-bg.png",
   "./assets/actions/handshake.png",
   "./assets/actions/protect.png",
   "./assets/roles/villager.png",

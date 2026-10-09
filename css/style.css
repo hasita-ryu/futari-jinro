@@ -23,9 +23,9 @@ body {
   font-family: "Public Sans", "Inter", "Yu Gothic", system-ui, sans-serif;
   letter-spacing: 0;
   background:
-    radial-gradient(circle at 14% 0%, rgba(131, 180, 141, 0.24), transparent 32%),
-    radial-gradient(circle at 88% 12%, rgba(217, 149, 94, 0.18), transparent 30%),
-    linear-gradient(155deg, #fbfaf6 0%, #f4f2ec 52%, #ece7dd 100%);
+    linear-gradient(rgba(255, 253, 248, 0.08), rgba(255, 253, 248, 0.08)),
+    url("../assets/backgrounds/parchment-bg.png") center top / cover no-repeat,
+    #f4f2ec;
   background-attachment: fixed;
 }
 
@@ -33,9 +33,9 @@ body[data-scene="morning"],
 body[data-scene="day"],
 body[data-scene="night"] {
   background:
-    radial-gradient(circle at 22% 0%, rgba(93, 147, 184, 0.22), transparent 34%),
-    radial-gradient(circle at 92% 16%, rgba(217, 130, 143, 0.16), transparent 32%),
-    linear-gradient(155deg, #f8f7f3 0%, #f0ede6 54%, #e8e4da 100%);
+    linear-gradient(rgba(255, 253, 248, 0.08), rgba(255, 253, 248, 0.08)),
+    url("../assets/backgrounds/parchment-bg.png") center top / cover no-repeat,
+    #f4f2ec;
 }
 
 body[data-scene="night"] {
@@ -47,7 +47,7 @@ body[data-scene="night"] {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.08;
+  opacity: 0.035;
   background-image:
     linear-gradient(90deg, rgba(42, 39, 37, 0.14) 1px, transparent 1px),
     linear-gradient(rgba(42, 39, 37, 0.11) 1px, transparent 1px);
